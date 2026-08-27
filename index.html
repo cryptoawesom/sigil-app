@@ -165,6 +165,7 @@ input.mono,textarea.mono{font-family:'JetBrains Mono';font-size:13px}
 .vchip.ok{background:var(--ok-soft);color:var(--ok)}
 .vchip.bad{background:var(--err-soft);color:var(--err)}
 .empty{text-align:center;color:var(--faint);font-size:13px;padding:24px;border:1px dashed var(--line2);border-radius:12px}
+.lobbyfeed{display:flex;flex-direction:column;gap:8px}.lobbyitem{padding:9px 10px;border:1px solid var(--line);border-radius:10px;background:#fff}.lobbyitem .lh{font-size:10.5px;color:var(--faint);margin-bottom:3px;font-family:'JetBrains Mono'}.lobbyitem .lt{font-size:12.5px;white-space:pre-wrap;word-break:break-word}
 
 .kv{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:11px 0;border-bottom:1px dashed var(--line)}
 .kv:last-child{border:none}
@@ -255,19 +256,19 @@ pre{background:#16161f;color:#c8f7dd;border:none;border-radius:11px;padding:15px
   <header style="margin-bottom:6px">
     <div class="eyebrow">Community Build × Flop Labs × Technocore</div>
     <h1 class="disp">Your identity, sealed.<br>Proof you can <span class="grad">verify.</span></h1>
-    <p class="lede">Generate a real <b>P-256 keypair</b> (<span class="mono">did:flop:…</span>) entirely in your browser,
-      back it up encrypted, publish signed intros &amp; work logs to Technocore, and share verifiable evidence.</p>
+    <p class="lede">Generate a real <b>Ed25519 keypair</b> (<span class="mono">did:key:z6Mk…</span>) entirely in your browser,
+      back it up encrypted, publish <b>real Technocore-signed messages</b>, and share verifiable evidence.</p>
     <div class="chiprow">
       <span class="chip f-ok">✓ 100% client-side</span>
       <span class="chip f-ok">✓ Encrypted backups (AES-256)</span>
-      <span class="chip f-acc">⚡ ECDSA-signed proofs</span>
+      <span class="chip f-acc">⚡ Ed25519-signed Technocore posts</span>
       <span class="chip f-acc">🧭 Guided six-step flow</span>
       <span class="chip f-acc">🔒 Auto-lock</span>
     </div>
     <div class="chiprow">
-      <span class="chip">REAL P-256 KEYS</span>
+      <span class="chip">REAL ED25519 KEYS</span>
       <span class="chip">PRIVATE KEY LOCAL</span>
-      <span class="chip">ZERO BACKEND</span>
+      <span class="chip">VERCEL BRIDGE → TECHNOCORE</span>
       <span class="chip">BUILT-IN VERIFIER</span>
     </div>
   </header>
@@ -286,9 +287,9 @@ pre{background:#16161f;color:#c8f7dd;border:none;border-radius:11px;padding:15px
   <section class="block" id="s1">
     <div class="card" id="card1">
       <div class="shead"><span class="snum">1</span>
-        <div><h2>Create your Technocore DID</h2><p>A real P-256 keypair is generated locally. Your public key hashes into your <span class="mono">did:flop:…</span>.</p></div>
+        <div><h2>Create your Technocore DID</h2><p>A real Ed25519 keypair is generated locally. Your public key becomes your <span class="mono">did:key:z6Mk…</span>.</p></div>
       </div>
-      <div class="note">🔐 <span><b>Security</b> — your private key is generated locally and never sent anywhere. Only signed payloads are ever published.</span></div>
+      <div class="note">🔐 <span><b>Security</b> — your private key is generated locally and never sent anywhere. The browser signs the lobby message; the Vercel bridge only forwards the public signed URL.</span></div>
       <label>Passphrase</label>
       <div class="pwrap">
         <input type="password" id="npass" placeholder="min. 12 characters — mix words, numbers, symbols" autocomplete="new-password">
@@ -334,7 +335,7 @@ pre{background:#16161f;color:#c8f7dd;border:none;border-radius:11px;padding:15px
       <div class="shead"><span class="snum">2</span>
         <div><h2>Save your identity</h2><p>Download an encrypted browser backup. Keep the file and passphrase separate.</p></div>
       </div>
-      <div class="note warn">⚠️ <span><b>Never share</b> your private key, backup file, or passphrase. Your DID is safe to publish.</span></div>
+      <div class="note warn">⚠️ <span><b>Never share</b> your private key, backup file, or passphrase. Your <span class="mono">did:key</span> is safe to publish.</span></div>
       <div data-need="identity">
         <div class="row">
           <button class="btn primary" onclick="downloadBackup()">⬇ Download encrypted backup</button>
@@ -353,7 +354,7 @@ pre{background:#16161f;color:#c8f7dd;border:none;border-radius:11px;padding:15px
     <div class="card" id="card3">
       <div class="locknote">🔒 Create &amp; unlock your identity first.</div>
       <div class="shead"><span class="snum">3</span>
-        <div><h2>Introduce yourself</h2><p>Your intro is signed locally. Post the plain text to the Technocore lobby, then export the proof.</p></div>
+        <div><h2>Introduce yourself</h2><p>Your intro is signed locally and posted to the public <b>Technocore lobby</b>. Then export the proof.</p></div>
       </div>
       <div data-need="unlocked">
         <label>Your introduction</label>
@@ -371,8 +372,14 @@ pre{background:#16161f;color:#c8f7dd;border:none;border-radius:11px;padding:15px
           </div>
         </div>
         <div class="row" style="margin-top:16px">
-          <button class="btn primary" id="signIntroBtn" onclick="signEntry('intro')">🔏 Sign introduction</button>
+          <button class="btn primary" id="signIntroBtn" onclick="signEntry('intro')">🔏 Sign + Post to Lobby</button>
           <button class="btn ghost" onclick="clearIntro()">Clear</button>
+          <button class="btn ghost" onclick="openLobby()">🌐 Open Lobby</button>
+        </div>
+        <div class="hint" id="tcStatus" style="margin-top:10px">Technocore: checking connection…</div>
+        <div class="prev-wrap" style="margin-top:12px">
+          <div class="prev-head">🌐 LIVE TECHNOCORE LOBBY</div>
+          <div id="lobbyFeed" class="hint">Loading lobby…</div>
         </div>
         <div class="nextrow"><button class="btn primary" onclick="jump('s4')">Next: Log Your Work →</button></div>
       </div>
@@ -384,7 +391,7 @@ pre{background:#16161f;color:#c8f7dd;border:none;border-radius:11px;padding:15px
     <div class="card" id="card4">
       <div class="locknote">🔒 Create &amp; unlock your identity first.</div>
       <div class="shead"><span class="snum">4</span>
-        <div><h2>Log useful work</h2><p>Built a tool? Wrote a guide? Describe it precisely — quality beats quantity.</p></div>
+        <div><h2>Log useful work</h2><p>Built a tool? Wrote a guide? Describe it precisely — quality beats quantity. Signed work is also posted to the lobby.</p></div>
       </div>
       <div data-need="unlocked">
         <label>Title</label>
@@ -393,7 +400,7 @@ pre{background:#16161f;color:#c8f7dd;border:none;border-radius:11px;padding:15px
         <textarea id="workBody" maxlength="600" placeholder="What you built, why it matters, link to repo/artifact…" oninput="onDraftInput()"></textarea>
         <div class="count" id="wcount">0 / 600</div>
         <div class="row" style="margin-top:16px">
-          <button class="btn primary" id="signWorkBtn" onclick="signEntry('work')">🔏 Sign work entry</button>
+          <button class="btn primary" id="signWorkBtn" onclick="signEntry('work')">🔏 Sign + Post work</button>
           <button class="btn ghost" onclick="clearWork()">Clear</button>
         </div>
         <div class="nextrow"><button class="btn primary" onclick="jump('s5')">Next: Review Records →</button></div>
@@ -468,7 +475,7 @@ pre{background:#16161f;color:#c8f7dd;border:none;border-radius:11px;padding:15px
 
 <footer>
   ✦ SIGIL — unofficial community tooling. Not affiliated with or endorsed by Flop Labs / Technocore.<br>
-  All cryptography runs locally via the Web Crypto API · no analytics · no network calls · keys never leave this tab.<br>
+  Cryptography and signing run locally via the Web Crypto API · the app uses a same-origin Vercel bridge only to reach Technocore · keys never leave this tab.<br>
   Verify announcements through official channels only. Never enter an existing wallet seed phrase anywhere.
 </footer>
 
@@ -505,6 +512,28 @@ const b64=b=>btoa([...new Uint8Array(b)].map(x=>String.fromCharCode(x)).join('')
 function ub64(s){const t=atob(s),u=new Uint8Array(t.length);for(let i=0;i<t.length;i++)u[i]=t.charCodeAt(i);return u.buffer}
 const hex=b=>[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('');
 const sha256=b=>crypto.subtle.digest('SHA-256',b);
+const B58='123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+function base58(bytes){
+  const a=[...new Uint8Array(bytes)]; let zeros=0; while(zeros<a.length&&a[zeros]===0)zeros++;
+  let digits=[0];
+  for(const byte of a){ let carry=byte; for(let i=0;i<digits.length;i++){ const x=digits[i]*256+carry; digits[i]=x%58; carry=Math.floor(x/58);} while(carry){digits.push(carry%58);carry=Math.floor(carry/58);} }
+  return B58[0].repeat(zeros)+digits.reverse().map(i=>B58[i]).join('');
+}
+function didKeyFromRawPublic(raw){
+  const p=new Uint8Array(2+32); p[0]=0xed; p[1]=0x01; p.set(new Uint8Array(raw),2); return 'did:key:z'+base58(p);
+}
+const sweepText=s=>String(s).replace(/[\u0000-\u001F\u007F-\u009F\u{00AD}\u{034F}\u{061C}\u{180B}-\u{180D}\u{200B}-\u{200F}\u{202A}-\u{202E}\u{2060}-\u{2064}\u{2066}-\u{206F}\u{FEFF}\u{FFF9}-\u{FFFB}]/gu,' ');
+function nonceFor(room){
+  const k='sigil.nonce.'+room; const last=Number(store.get(k)||0); const n=Math.max(Date.now(), last+1); store.set(k,String(n)); return String(n);
+}
+function tcMessagePayload(room,nonce,text){return `${room}|${nonce}|${text}`;}
+async function signTechnocoreMessage(room,text){
+  const clean=sweepText(text); const nonce=nonceFor(room);
+  const sig=await crypto.subtle.sign('Ed25519',state.privKey,enc.encode(tcMessagePayload(room,nonce,clean)));
+  return {room,nonce,text:clean,sig:b64u(sig),did:state.record.did};
+}
+function b64u(b){return b64(b).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');}
+function ub64u(s){const t=String(s).replace(/-/g,'+').replace(/_/g,'/'),p=t+'='.repeat((4-t.length%4)%4);return ub64(p)}
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const payloadOf=c=>[c.createdAt,c.title||'',c.content].join('\n');
 const shortDid=d=>d.slice(0,17)+'…'+d.slice(-6);
@@ -566,33 +595,35 @@ async function createIdentity(){
   const err=$('#cerr'),btn=$('#createBtn');err.style.display='none';
   const p=$('#npass').value,p2=$('#npass2').value;
   if(p.length<12){err.textContent='Passphrase must be at least 12 characters.';err.style.display='block';return}
-  if(p!==p2){err.textContent='Passphrases don\u2019t match.';err.style.display='block';return}
+  if(p!==p2){err.textContent='Passphrases don’t match.';err.style.display='block';return}
+  if(!crypto.subtle){err.textContent='Web Crypto is unavailable.';err.style.display='block';return}
   btn.disabled=true;btn.textContent='Sealing…';
   try{
-    const kp=await crypto.subtle.generateKey({name:'ECDSA',namedCurve:'P-256'},true,['sign','verify']);
-    const privJwk=await crypto.subtle.exportKey('jwk',kp.privateKey);delete privJwk.ext;delete privJwk.key_ops;
-    const pubJwk=await crypto.subtle.exportKey('jwk',kp.publicKey);delete pubJwk.ext;delete pubJwk.key_ops;
-    const did='did:flop:'+hex(await sha256(await crypto.subtle.exportKey('raw',kp.publicKey)));
+    const kp=await crypto.subtle.generateKey({name:'Ed25519'},true,['sign','verify']);
+    const privJwk=await crypto.subtle.exportKey('jwk',kp.privateKey); delete privJwk.ext; delete privJwk.key_ops;
+    const pubJwk=await crypto.subtle.exportKey('jwk',kp.publicKey); delete pubJwk.ext; delete pubJwk.key_ops;
+    const rawPub=await crypto.subtle.exportKey('raw',kp.publicKey);
+    const did=didKeyFromRawPublic(rawPub);
     const salt=crypto.getRandomValues(new Uint8Array(16)),iv=crypto.getRandomValues(new Uint8Array(12));
     const key=await deriveAES(p,salt,KDF_ITERATIONS);
     const ct=await crypto.subtle.encrypt({name:'AES-GCM',iv},key,enc.encode(JSON.stringify(privJwk)));
-    state.record={v:3,app:'sigil',kdf:`PBKDF2-SHA256-${KDF_ITERATIONS}`,kdfIterations:KDF_ITERATIONS,cipher:'AES-256-GCM',
-      salt:b64(salt),iv:b64(iv),ct:b64(ct),pub:pubJwk,did,createdAt:Date.now()};
+    state.record={v:4,app:'sigil',keyAlg:'Ed25519',kdf:`PBKDF2-SHA256-${KDF_ITERATIONS}`,kdfIterations:KDF_ITERATIONS,cipher:'AES-256-GCM',salt:b64(salt),iv:b64(iv),ct:b64(ct),pub:pubJwk,did,createdAt:Date.now()};
     store.set(LS_ID,JSON.stringify(state.record));
     state.privKey=kp.privateKey;state.unlocked=true;
     $('#npass').value=$('#npass2').value='';
-    logAct('Identity created');
+    logAct('Ed25519 Technocore identity created');
     refresh();
-    toast('✦ Identity sealed — download your backup in Step 2 →');
+    toast('✦ Technocore identity sealed — download your backup in Step 2 →');
     jump('s2');
-  }catch(e){err.textContent='Crypto unavailable: '+e.message;err.style.display='block'}
+  }catch(e){err.textContent='Ed25519 crypto unavailable: '+e.message;err.style.display='block'}
   finally{btn.disabled=false;btn.textContent='Create My Identity'}
 }
 async function tryUnlock(pass,r){
-  const key=await deriveAES(pass,ub64(r.salt),r.kdfIterations||310000);
+  if(r.keyAlg!=='Ed25519') throw new Error('This is an old SIGIL P-256 vault. Create a new Ed25519 Technocore identity.');
+  const key=await deriveAES(pass,ub64(r.salt),r.kdfIterations||KDF_ITERATIONS);
   const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:new Uint8Array(ub64(r.iv))},key,ub64(r.ct));
   const jwk=JSON.parse(new TextDecoder().decode(pt));
-  state.privKey=await crypto.subtle.importKey('jwk',jwk,{name:'ECDSA',namedCurve:'P-256'},false,['sign']);
+  state.privKey=await crypto.subtle.importKey('jwk',jwk,{name:'Ed25519'},false,['sign']);
   state.record=r;state.unlocked=true;
   logAct('Vault unlocked');refresh();
 }
@@ -677,35 +708,57 @@ function clearIntro(){$('#introBody').value='';onDraftInput()}
 function clearWork(){$('#workTitle').value='';$('#workBody').value='';onDraftInput()}
 
 async function signEntry(kind){
-  const content=(kind==='intro'?$('#introBody'):$('#workBody')).value.trim();
+  const rawContent=(kind==='intro'?$('#introBody'):$('#workBody')).value.trim();
   const title=kind==='work'?$('#workTitle').value.trim():undefined;
-  if(!content){toast('⚠️ Write something first');return}
+  if(!rawContent){toast('⚠️ Write something first');return}
   if(!state.unlocked||!state.privKey){toast('🔒 Unlock your vault first');return}
-  const btn=$(kind==='intro'?'#signIntroBtn':'#signWorkBtn');
-  btn.disabled=true;
+  const btn=$(kind==='intro'?'#signIntroBtn':'#signWorkBtn'); btn.disabled=true;
   try{
-    const c={createdAt:new Date().toISOString(),...(title?{title}:{}),content};
-    const sig=await crypto.subtle.sign({name:'ECDSA',hash:'SHA-256'},state.privKey,enc.encode(payloadOf(c)));
-    const proof={schema:'technocore.contribution.v1',did:state.record.did,pub:state.record.pub,
-      kind,...c,sigAlg:'ES256',sig:b64(sig)};
-    proof.proofHash=hex(await sha256(enc.encode(JSON.stringify(
-      {schema:proof.schema,did:proof.did,payload:payloadOf(c),sig:proof.sig}))));
+    const text=kind==='intro' ? rawContent : ((title?title+' — ':'')+rawContent).trim();
+    const tc=await signTechnocoreMessage('lobby',text);
+    const res=await fetch(`/api/technocore?op=post&room=lobby&did=${encodeURIComponent(tc.did)}&sig=${encodeURIComponent(tc.sig)}&nonce=${encodeURIComponent(tc.nonce)}&text=${encodeURIComponent(tc.text)}`,{cache:'no-store'});
+    const responseText=await res.text();
+    if(!res.ok) throw new Error(responseText||`Technocore returned ${res.status}`);
+    const c={createdAt:new Date().toISOString(),...(title?{title}:{}),content:rawContent};
+    const proof={schema:'technocore.contribution.v2',did:state.record.did,pub:state.record.pub,kind,...c,sigAlg:'Ed25519',room:tc.room,nonce:tc.nonce,technocoreText:tc.text,technocoreSig:tc.sig,serverResponse:responseText};
+    proof.proofHash=hex(await sha256(enc.encode(JSON.stringify({schema:proof.schema,did:proof.did,room:proof.room,nonce:proof.nonce,text:proof.technocoreText,sig:proof.technocoreSig}))));
     const ps=getProofs();ps.unshift(proof);store.set(LS_PROOFS,JSON.stringify(ps));
-    logAct((kind==='intro'?'Introduction':'Work entry')+' signed');
+    logAct((kind==='intro'?'Introduction':'Work entry')+' signed + posted to lobby');
     kind==='intro'?clearIntro():clearWork();
-    refresh();openProofModal(proof,true);
-  }catch(e){toast('⚠️ Signing failed: '+e.message)}
+    refresh();openProofModal(proof,true);refreshTechnocore();
+    toast('✅ Signed and posted to Technocore lobby');
+  }catch(e){toast('⚠️ Technocore publish failed: '+e.message)}
   finally{btn.disabled=false}
+}
+function openLobby(){window.open('https://technocore.chat/humans#r/lobby','_blank','noopener,noreferrer')}
+async function refreshTechnocore(){
+  const status=$('#tcStatus'),feed=$('#lobbyFeed'); if(!status||!feed)return;
+  try{
+    const r=await fetch('/api/technocore?op=read&room=lobby&limit=8',{cache:'no-store'});
+    if(!r.ok) throw new Error(`HTTP ${r.status}`);
+    const data=await r.json();
+    status.textContent='Technocore: connected ✓'; status.style.color='var(--ok)';
+    const items=Array.isArray(data.messages)?data.messages:(Array.isArray(data)?data:[]);
+    feed.className='lobbyfeed';
+    feed.innerHTML=items.slice(-8).reverse().map(m=>`<div class="lobbyitem"><div class="lh">${esc(m.from||'unknown')} · ${esc(m.ts||'')}</div><div class="lt">${esc(m.text||'')}</div></div>`).join('') || '<div class="hint">Lobby is empty.</div>';
+  }catch(e){
+    status.textContent='Technocore: bridge offline — '+e.message; status.style.color='var(--err)';
+    feed.className='hint'; feed.textContent='Could not read the live lobby yet.';
+  }
 }
 function getProofs(){try{return JSON.parse(store.get(LS_PROOFS)||'[]')}catch{return[]}}
 const findProof=h=>getProofs().find(p=>p.proofHash===h);
 async function verifyProof(p){
   try{
-    const pub=await crypto.subtle.importKey('jwk',p.pub,{name:'ECDSA',namedCurve:'P-256'},true,['verify']);
-    return await crypto.subtle.verify({name:'ECDSA',hash:'SHA-256'},pub,new Uint8Array(ub64(p.sig)),enc.encode(payloadOf(p)));
+    if(p.schema==='technocore.contribution.v2'){
+      const pub=await crypto.subtle.importKey('jwk',p.pub,{name:'Ed25519'},true,['verify']);
+      const okSig=await crypto.subtle.verify('Ed25519',pub,ub64u(p.technocoreSig),enc.encode(tcMessagePayload(p.room,p.nonce,p.technocoreText)));
+      const expect=hex(await sha256(enc.encode(JSON.stringify({schema:p.schema,did:p.did,room:p.room,nonce:p.nonce,text:p.technocoreText,sig:p.technocoreSig}))));
+      return okSig&&expect===p.proofHash;
+    }
+    return false;
   }catch{return false}
 }
-
 /* ═══════ proof UI ═══════ */
 function proofCardHTML(p,ok){
   return `<h3>${esc((p.kind==='intro'?'👋 ':'🛠 ')+(p.title||(p.kind==='intro'?'Introduction':'Work entry')))}
@@ -806,7 +859,7 @@ function showKeyInfo(){
    `<div class="kv"><span class="k">DID</span><span class="mono" style="font-size:12px;word-break:break-all">${esc(r.did)}</span></div>
     <div class="kv"><span class="k">KDF</span><span class="mono">${esc(r.kdf)}</span></div>
     <div class="kv"><span class="k">Cipher</span><span class="mono">${esc(r.cipher)}</span></div>
-    <div class="kv"><span class="k">Signature</span><span class="mono">ECDSA P-256 (ES256)</span></div>
+    <div class="kv"><span class="k">Signature</span><span class="mono">Ed25519 (Technocore signed lane)</span></div>
     <div style="font-size:11px;font-weight:700;color:var(--faint);letter-spacing:.09em;margin:14px 0 6px">PUBLIC KEY JWK</div>
     <pre>${esc(JSON.stringify(r.pub,null,2))}</pre>
     <p class="hint" style="margin-top:10px">🔐 Your private key only ever exists decrypted in-memory while the vault is unlocked.</p>`);
@@ -853,7 +906,7 @@ function refresh(){
   $('#rDid').textContent=r?shortDid(r.did):'—';
   $('#rDid').className='rbig mono'+(r?'':' dim');$('#rDid').style.fontSize='12px';
   $('#rDidCopy').style.visibility=r?'visible':'hidden';
-  $('#rLobby').textContent=r?('r/'+r.did.replace('did:flop:','').slice(0,10)):'—';
+  $('#rLobby').textContent=r?'lobby':'—';
   $('#rProofs').textContent=ps.length+(ps.length===1?' proof signed':' proofs signed');
   $('#rProofs').className='rbig'+(ps.length?'':' dim');
   const st=$('#rStatus');st.textContent=u?'Active':'Inactive';st.className='stat-chip'+(u?' on':'');
@@ -913,6 +966,8 @@ setInterval(()=>{if(state.unlocked&&Date.now()-lastAct>15*60*1000){lock();toast(
   try{const d=JSON.parse(store.get(LS_DRAFT)||'null');
     if(d){$('#introBody').value=d.intro||'';$('#workTitle').value=d.title||'';$('#workBody').value=d.body||''}}catch{}
   refresh();
+  refreshTechnocore();
+  setInterval(()=>{ if(document.visibilityState==='visible') refreshTechnocore(); },30000);
 })();
 </script>
 </body>
