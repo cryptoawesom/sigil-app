@@ -1,3 +1,5 @@
 {
-  "cleanUrls": true
+  "functions": {
+    "api/technocore.js": { "maxDuration": 10 }
+  }
 }

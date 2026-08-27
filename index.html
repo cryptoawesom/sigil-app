@@ -711,42 +711,82 @@ function onDraftInput(){
 function clearIntro(){$('#introBody').value='';onDraftInput()}
 function clearWork(){$('#workTitle').value='';$('#workBody').value='';onDraftInput()}
 
+function tcItems(data){
+  if(Array.isArray(data)) return data;
+  if(data&&Array.isArray(data.messages)) return data.messages;
+  return [];
+}
+function sleep(ms){return new Promise(resolve=>setTimeout(resolve,ms));}
+function tcMatch(items,tc){
+  return items.find(m=>String(m?.from??'')===String(tc.did)&&String(m?.nonce??'')===String(tc.nonce)&&String(m?.text??'')===String(tc.text))||null;
+}
+async function readTechnocoreRoom(room='lobby',limit=200){
+  const q=new URLSearchParams({op:'read',room:String(room),limit:String(limit),_ : String(Date.now())});
+  const res=await fetch(`/api/technocore?${q.toString()}`,{cache:'no-store'});
+  const body=await res.text();
+  if(!res.ok) throw new Error(`Room read failed (${res.status}): ${body.slice(0,300)}`);
+  try{return JSON.parse(body)}catch{throw new Error(`Technocore returned invalid JSON: ${body.slice(0,300)}`)}
+}
+function seqFromResponse(responseText){
+  try{
+    const root=JSON.parse(responseText);
+    const candidates=[root,root?.message,root?.posted,root?.result,root?.data];
+    for(const c of candidates){
+      if(c&&c.seq!=null){const n=Number(c.seq);if(Number.isFinite(n))return n;}
+    }
+  }catch{}
+  return null;
+}
+async function resolveLobbySeq(tc){
+  for(let attempt=0;attempt<10;attempt++){
+    try{
+      const data=await readTechnocoreRoom(tc.room||'lobby',200);
+      const hit=tcMatch(tcItems(data),tc);
+      if(hit?.seq!=null){const n=Number(hit.seq);if(Number.isFinite(n))return n;}
+    }catch(e){console.warn('Technocore lookup attempt failed',attempt+1,e);}
+    await sleep(300+attempt*300);
+  }
+  return null;
+}
+async function refreshProofLobbySeq(proofHash){
+  const ps=getProofs(),i=ps.findIndex(p=>p.proofHash===proofHash);
+  if(i<0){toast('⚠️ Proof not found');return}
+  const p=ps[i];
+  toast('🔎 Looking for your Technocore message…');
+  const seq=await resolveLobbySeq({room:p.room||'lobby',did:p.did,nonce:String(p.nonce),text:p.technocoreText});
+  if(seq==null){toast('⚠️ Message not found yet. Do not repost the same entry.');return}
+  ps[i].serverSeq=seq;store.set(LS_PROOFS,JSON.stringify(ps));
+  logAct(`Lobby ID recovered: lobby#${seq}`);refresh();toast(`✅ Lobby ID found: lobby#${seq}`);
+}
 async function signEntry(kind){
   const rawContent=(kind==='intro'?$('#introBody'):$('#workBody')).value.trim();
   const title=kind==='work'?$('#workTitle').value.trim():undefined;
   if(!rawContent){toast('⚠️ Write something first');return}
   if(!state.unlocked||!state.privKey){toast('🔒 Unlock your vault first');return}
-  const btn=$(kind==='intro'?'#signIntroBtn':'#signWorkBtn'); btn.disabled=true;
+  const btn=$(kind==='intro'?'#signIntroBtn':'#signWorkBtn');
+  const originalText=btn.textContent;btn.disabled=true;btn.textContent='🔏 Signing…';
   try{
-    const text=kind==='intro' ? rawContent : ((title?title+' — ':'')+rawContent).trim();
+    const text=kind==='intro'?rawContent:((title?title+' — ':'')+rawContent).trim();
     const tc=await signTechnocoreMessage('lobby',text);
-    const res=await fetch(`/api/technocore?op=post&room=lobby&did=${encodeURIComponent(tc.did)}&sig=${encodeURIComponent(tc.sig)}&nonce=${encodeURIComponent(tc.nonce)}&text=${encodeURIComponent(tc.text)}`,{cache:'no-store'});
+    btn.textContent='📡 Posting…';
+    const q=new URLSearchParams({op:'post',room:tc.room,did:tc.did,sig:tc.sig,nonce:tc.nonce,text:tc.text,_:String(Date.now())});
+    const res=await fetch(`/api/technocore?${q.toString()}`,{method:'GET',cache:'no-store'});
     const responseText=await res.text();
+    console.log('Technocore write response',{status:res.status,body:responseText,tc});
     if(!res.ok) throw new Error(responseText||`Technocore returned ${res.status}`);
-
-    // seq is assigned by Technocore after acceptance. Read the room back and
-    // locate this exact signed message so the UI can expose lobby#<seq>.
-    let serverSeq=null;
-    try{
-      const rr=await fetch('/api/technocore?op=read&room=lobby&limit=200',{cache:'no-store'});
-      if(rr.ok){
-        const rd=await rr.json();
-        const items=Array.isArray(rd.messages)?rd.messages:(Array.isArray(rd)?rd:[]);
-        const hit=items.find(m=>String(m.from||'')===tc.did && String(m.nonce||'')===tc.nonce && String(m.text||'')===tc.text);
-        if(hit?.seq!=null) serverSeq=Number(hit.seq);
-      }
-    }catch{}
-
+    btn.textContent='🔎 Finding Lobby ID…';
+    let serverSeq=seqFromResponse(responseText);
+    if(serverSeq==null) serverSeq=await resolveLobbySeq(tc);
     const c={createdAt:new Date().toISOString(),...(title?{title}:{}),content:rawContent};
     const proof={schema:'technocore.contribution.v2',did:state.record.did,pub:state.record.pub,kind,...c,sigAlg:'Ed25519',room:tc.room,nonce:tc.nonce,technocoreText:tc.text,technocoreSig:tc.sig,serverResponse:responseText,serverSeq};
     proof.proofHash=hex(await sha256(enc.encode(JSON.stringify({schema:proof.schema,did:proof.did,room:proof.room,nonce:proof.nonce,text:proof.technocoreText,sig:proof.technocoreSig}))));
     const ps=getProofs();ps.unshift(proof);store.set(LS_PROOFS,JSON.stringify(ps));
-    logAct((kind==='intro'?'Introduction':'Work entry')+' signed + posted to lobby');
+    logAct(serverSeq!=null?`${kind==='intro'?'Introduction':'Work entry'} posted as lobby#${serverSeq}`:`${kind==='intro'?'Introduction':'Work entry'} posted — Lobby ID pending`);
     kind==='intro'?clearIntro():clearWork();
-    refresh();openProofModal(proof,true);refreshTechnocore();
-    toast(serverSeq!=null?`✅ Posted — lobby#${serverSeq}`:'✅ Signed and posted to Technocore lobby');
-  }catch(e){toast('⚠️ Technocore publish failed: '+e.message)}
-  finally{btn.disabled=false}
+    refresh();await refreshTechnocore();openProofModal(proof,true);
+    toast(serverSeq!=null?`✅ Posted — lobby#${serverSeq}`:'✅ Posted — Lobby ID not resolved yet. Use Find Lobby ID.');
+  }catch(e){console.error('Technocore publish error',e);toast('⚠️ Technocore publish failed: '+(e?.message||String(e)))}
+  finally{btn.disabled=false;btn.textContent=originalText}
 }
 function lobbyRef(seq){return seq!=null&&String(seq)!==''?`lobby#${seq}`:'lobby'}
 function lobbyUrl(seq){return `https://technocore.chat/humans#r/lobby${seq!=null&&String(seq)!==''?'/'+encodeURIComponent(seq):''}`}
@@ -829,7 +869,7 @@ function exportProof(h){const p=findProof(h);if(!p)return;
 function openProofModal(p,fresh){
   showModal(fresh?'🎉 Signed! Next steps':'Proof detail',
    `<ol style="padding-left:20px;font-size:13.5px;color:var(--mut);line-height:2;margin-bottom:14px">
-      <li>Post the signed message into the <b>Technocore lobby</b>.</li>
+      <li>Signed message submitted to the <b>Technocore lobby</b>.</li>
       ${p.serverSeq!=null?`<li>Live room reference: <b class="mono">${esc(lobbyRef(p.serverSeq))}</b> — <a href="${esc(lobbyUrl(p.serverSeq))}" target="_blank" rel="noopener noreferrer">open message</a></li>`:'<li>The server sequence is assigned after acceptance and will appear in Your Vault.</li>'}
       <li>Export / attach this proof where contributions are collected.</li>
       <li>Share on X with your DID visible.</li>
@@ -837,7 +877,7 @@ function openProofModal(p,fresh){
     <pre>${esc(JSON.stringify(p,null,2))}</pre>
     <div class="row" style="margin-top:16px">
       <button class="btn primary" onclick="closeModal();openTemplate('${p.proofHash}')">📣 Generate X post</button>
-      <button class="btn ghost" onclick="exportProof('${p.proofHash}')">⬇ Download</button>
+      ${p.serverSeq==null?`<button class="btn ghost" onclick="refreshProofLobbySeq('${p.proofHash}')">🔄 Find Lobby ID</button>`:''}<button class="btn ghost" onclick="exportProof('${p.proofHash}')">⬇ Download</button>
       <button class="btn ghost" onclick="cp(JSON.stringify(findProof('${p.proofHash}'),null,2))">📋 Copy JSON</button>
     </div>`);
 }
