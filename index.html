@@ -449,7 +449,11 @@ pre{background:#16161f;color:#c8f7dd;border:none;border-radius:11px;padding:15px
     <div class="rsec"><div class="rlab">Identity</div><div class="rbig dim" id="rIdent">Not created yet</div></div>
     <div class="rsec"><div class="rlab">Public DID <button class="copybtn" id="rDidCopy" onclick="copyDid()" style="visibility:hidden">copy</button></div>
       <div class="rbig dim mono" id="rDid" style="font-size:12px">—</div></div>
-    <div class="rsec"><div class="rlab">Lobby ID</div><div class="rbig dim mono" id="rLobby" style="font-size:12px">—</div></div>
+    <div class="rsec"><div class="rlab">Lobby ID</div><div class="row" style="gap:6px;align-items:center">
+      <div class="rbig dim mono" id="rLobby" style="font-size:12px">—</div>
+      <button class="copybtn" id="rLobbyCopy" onclick="copyLobbyRef()" style="visibility:hidden">copy</button>
+      <button class="copybtn" id="rLobbyOpen" onclick="openCurrentLobby()" style="visibility:hidden">open</button>
+    </div></div>
     <div class="rsec"><div class="rlab">Contribution</div><div class="rbig dim" id="rProofs">0 proofs signed</div></div>
     <div class="rsec"><div class="rlab">Status</div><span class="stat-chip" id="rStatus">Inactive</span></div>
     <div class="rsec"><div class="rlab">Recent activity</div>
@@ -719,18 +723,41 @@ async function signEntry(kind){
     const res=await fetch(`/api/technocore?op=post&room=lobby&did=${encodeURIComponent(tc.did)}&sig=${encodeURIComponent(tc.sig)}&nonce=${encodeURIComponent(tc.nonce)}&text=${encodeURIComponent(tc.text)}`,{cache:'no-store'});
     const responseText=await res.text();
     if(!res.ok) throw new Error(responseText||`Technocore returned ${res.status}`);
+
+    // seq is assigned by Technocore after acceptance. Read the room back and
+    // locate this exact signed message so the UI can expose lobby#<seq>.
+    let serverSeq=null;
+    try{
+      const rr=await fetch('/api/technocore?op=read&room=lobby&limit=200',{cache:'no-store'});
+      if(rr.ok){
+        const rd=await rr.json();
+        const items=Array.isArray(rd.messages)?rd.messages:(Array.isArray(rd)?rd:[]);
+        const hit=items.find(m=>String(m.from||'')===tc.did && String(m.nonce||'')===tc.nonce && String(m.text||'')===tc.text);
+        if(hit?.seq!=null) serverSeq=Number(hit.seq);
+      }
+    }catch{}
+
     const c={createdAt:new Date().toISOString(),...(title?{title}:{}),content:rawContent};
-    const proof={schema:'technocore.contribution.v2',did:state.record.did,pub:state.record.pub,kind,...c,sigAlg:'Ed25519',room:tc.room,nonce:tc.nonce,technocoreText:tc.text,technocoreSig:tc.sig,serverResponse:responseText};
+    const proof={schema:'technocore.contribution.v2',did:state.record.did,pub:state.record.pub,kind,...c,sigAlg:'Ed25519',room:tc.room,nonce:tc.nonce,technocoreText:tc.text,technocoreSig:tc.sig,serverResponse:responseText,serverSeq};
     proof.proofHash=hex(await sha256(enc.encode(JSON.stringify({schema:proof.schema,did:proof.did,room:proof.room,nonce:proof.nonce,text:proof.technocoreText,sig:proof.technocoreSig}))));
     const ps=getProofs();ps.unshift(proof);store.set(LS_PROOFS,JSON.stringify(ps));
     logAct((kind==='intro'?'Introduction':'Work entry')+' signed + posted to lobby');
     kind==='intro'?clearIntro():clearWork();
     refresh();openProofModal(proof,true);refreshTechnocore();
-    toast('✅ Signed and posted to Technocore lobby');
+    toast(serverSeq!=null?`✅ Posted — lobby#${serverSeq}`:'✅ Signed and posted to Technocore lobby');
   }catch(e){toast('⚠️ Technocore publish failed: '+e.message)}
   finally{btn.disabled=false}
 }
-function openLobby(){window.open('https://technocore.chat/humans#r/lobby','_blank','noopener,noreferrer')}
+function lobbyRef(seq){return seq!=null&&String(seq)!==''?`lobby#${seq}`:'lobby'}
+function lobbyUrl(seq){return `https://technocore.chat/humans#r/lobby${seq!=null&&String(seq)!==''?'/'+encodeURIComponent(seq):''}`}
+function currentLobbySeq(){
+  const ps=getProofs();
+  const p=ps.find(x=>x.room==='lobby'&&x.serverSeq!=null);
+  return p?.serverSeq??null;
+}
+function copyLobbyRef(){cp(lobbyRef(currentLobbySeq()))}
+function openCurrentLobby(){window.open(lobbyUrl(currentLobbySeq()),'_blank','noopener,noreferrer')}
+function openLobby(){openCurrentLobby()}
 async function refreshTechnocore(){
   const status=$('#tcStatus'),feed=$('#lobbyFeed'); if(!status||!feed)return;
   try{
@@ -764,7 +791,7 @@ function proofCardHTML(p,ok){
   return `<h3>${esc((p.kind==='intro'?'👋 ':'🛠 ')+(p.title||(p.kind==='intro'?'Introduction':'Work entry')))}
     <span class="kindtag ${esc(p.kind)}">${esc(p.kind)}</span>
     <span class="vchip ${ok?'ok':'bad'}">${ok?'✓ valid':'✗ invalid'}</span></h3>
-    <div class="meta">${fmtDate(Date.parse(p.createdAt))} · ${esc(shortDid(p.did))}<br>${esc(String(p.proofHash).slice(0,26))}…</div>
+    <div class="meta">${fmtDate(Date.parse(p.createdAt))} · ${esc(shortDid(p.did))}${p.serverSeq!=null?`<br>Technocore: ${esc(lobbyRef(p.serverSeq))}`:''}<br>${esc(String(p.proofHash).slice(0,26))}…</div>
     <div class="actions">
       <button class="btn ghost sm" onclick="viewJson('${p.proofHash}')">👁 JSON</button>
       <button class="btn ghost sm" onclick="exportProof('${p.proofHash}')">⬇ Export</button>
@@ -802,7 +829,8 @@ function exportProof(h){const p=findProof(h);if(!p)return;
 function openProofModal(p,fresh){
   showModal(fresh?'🎉 Signed! Next steps':'Proof detail',
    `<ol style="padding-left:20px;font-size:13.5px;color:var(--mut);line-height:2;margin-bottom:14px">
-      <li>Post the plain message text into the <b>Technocore lobby</b>.</li>
+      <li>Post the signed message into the <b>Technocore lobby</b>.</li>
+      ${p.serverSeq!=null?`<li>Live room reference: <b class="mono">${esc(lobbyRef(p.serverSeq))}</b> — <a href="${esc(lobbyUrl(p.serverSeq))}" target="_blank" rel="noopener noreferrer">open message</a></li>`:'<li>The server sequence is assigned after acceptance and will appear in Your Vault.</li>'}
       <li>Export / attach this proof where contributions are collected.</li>
       <li>Share on X with your DID visible.</li>
     </ol>
@@ -906,7 +934,11 @@ function refresh(){
   $('#rDid').textContent=r?shortDid(r.did):'—';
   $('#rDid').className='rbig mono'+(r?'':' dim');$('#rDid').style.fontSize='12px';
   $('#rDidCopy').style.visibility=r?'visible':'hidden';
-  $('#rLobby').textContent=r?'lobby':'—';
+  const lobbySeq=currentLobbySeq();
+  $('#rLobby').textContent=r?lobbyRef(lobbySeq):'—';
+  $('#rLobby').className='rbig mono'+(r?'':' dim');
+  $('#rLobbyCopy').style.visibility=r?'visible':'hidden';
+  $('#rLobbyOpen').style.visibility=r?'visible':'hidden';
   $('#rProofs').textContent=ps.length+(ps.length===1?' proof signed':' proofs signed');
   $('#rProofs').className='rbig'+(ps.length?'':' dim');
   const st=$('#rStatus');st.textContent=u?'Active':'Inactive';st.className='stat-chip'+(u?' on':'');

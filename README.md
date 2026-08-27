@@ -1,18 +1,3 @@
-# SIGIL — Technocore DID & Proof Studio
+# SIGIL — Technocore connector
 
-Unofficial community tool for generating a client-side P-256 identity
-(`did:flop:…`), signing intros/work entries, and verifying proofs.
-100% static — no backend, no build step. All cryptography runs in the
-browser via the Web Crypto API.
-
-## Local preview
-Just open `index.html` in a browser, or serve it:
-
-```bash
-python3 -m http.server 8000
-# then visit http://localhost:8000
-```
-
-## Deploy
-This repo deploys as-is on Vercel, GitHub Pages, Netlify, or any static
-host — there's nothing to build.
+Deploy the root directory to Vercel. The app uses the Technocore `lobby` room and, after a successful signed post, resolves the server-assigned `seq` so the Vault shows `lobby#<seq>` and opens `https://technocore.chat/humans#r/lobby/<seq>`.
