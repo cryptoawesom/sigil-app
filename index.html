@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SIGIL — Technocore DID & Proof Studio</title>
+<meta name="description" content="Unofficial community studio for Technocore identities and signed contributions. Keys never leave your browser.">
+<link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">✦</text></svg>'>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f7f7f9; --card:#ffffff; --card2:#fbfbfd;
+  --line:#e7e7ee; --line2:#dcdce6;
+  --ink:#15151f; --mut:#686c7e; --faint:#9a9dae;
+  --acc:#6d28d9; --acc-soft:#f3efff; --acc-line:#ddd2ff;
+  --pink:#db2777; --orange:#ea580c;
+  --ok:#0f9960; --ok-soft:#e9f9f1; --ok-line:#bfe8d2;
+  --err:#dc2626; --err-soft:#fdeeee;
+  --warn-soft:#fff7e6; --warn-ink:#92600a;
+  --r:16px;
+  --shadow:0 1px 2px rgba(21,21,31,.04),0 8px 24px -18px rgba(21,21,31,.18);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--ink);
+  line-height:1.55;font-size:15px;-webkit-font-smoothing:antialiased}
+body::before{content:'';position:fixed;inset:0;z-index:-1;
+  background-image:radial-gradient(circle,rgba(21,21,31,.035) 1px,transparent 1px);background-size:22px 22px}
+.mono{font-family:'JetBrains Mono',monospace}
+.disp{font-family:'Space Grotesk','Inter',sans-serif}
+.hidden{display:none!important}
+
+/* ── top nav ── */
+.topnav{position:sticky;top:0;z-index:40;background:rgba(247,247,249,.85);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.topnav .in{max-width:1180px;margin:0 auto;display:flex;align-items:center;gap:14px;padding:12px 22px}
+.brand{display:flex;align-items:center;gap:11px;text-decoration:none;color:var(--ink)}
+.gem{width:32px;height:32px;border-radius:9px;display:grid;place-items:center;font-size:14px;color:#fff;
+  background:linear-gradient(135deg,var(--acc),var(--pink));box-shadow:0 4px 14px rgba(109,40,217,.28)}
+.brand b{font-family:'Space Grotesk';font-weight:700;font-size:16px;letter-spacing:.06em}
+.brand span{font-size:11.5px;color:var(--mut);display:block;margin-top:-2px}
+.navright{margin-left:auto;display:flex;align-items:center;gap:10px}
+.statuspill{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:600;color:var(--mut);
+  border:1px solid var(--line);background:var(--card);border-radius:999px;padding:6px 13px}
+.sdot{width:7px;height:7px;border-radius:50%;background:var(--faint)}
+.sdot.on{background:var(--ok);box-shadow:0 0 0 3px var(--ok-soft)}
+
+/* storage warning */
+.storagewarn{display:none;font-size:12.5px;font-weight:600;color:var(--warn-ink);
+  background:var(--warn-soft);border-bottom:1px solid #ecd9a8;padding:9px 22px;text-align:center}
+.storagewarn.show{display:block}
+
+/* ── shell ── */
+.shell{max-width:1180px;margin:0 auto;padding:30px 22px 90px;display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:26px;align-items:start}
+main{min-width:0}
+
+/* ── hero ── */
+.eyebrow{font-size:11px;font-weight:700;letter-spacing:.22em;color:var(--acc);text-transform:uppercase;margin-bottom:14px}
+h1.disp{font-size:clamp(34px,5vw,52px);line-height:1.06;font-weight:700;letter-spacing:-.02em}
+.grad{background:linear-gradient(92deg,var(--acc) 0%,var(--pink) 55%,var(--orange) 100%);
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.lede{color:var(--mut);max-width:560px;margin-top:14px;font-size:15.5px}
+.chiprow{display:flex;gap:8px;flex-wrap:wrap;margin-top:20px}
+.chiprow+.chiprow{margin-top:10px}
+.chip{font-size:11px;font-weight:600;letter-spacing:.05em;padding:6px 11px;border-radius:7px;
+  border:1px solid var(--line);background:var(--card);color:var(--mut)}
+.chip.f-ok{color:var(--ok);border-color:var(--ok-line);background:var(--ok-soft)}
+.chip.f-acc{color:var(--acc);border-color:var(--acc-line);background:var(--acc-soft)}
+
+/* ── stepper ── */
+.stepper{position:sticky;top:61px;z-index:30;display:flex;gap:6px;margin:30px 0 18px;padding:6px;
+  background:rgba(255,255,255,.88);backdrop-filter:blur(10px);border:1px solid var(--line);
+  border-radius:14px;overflow-x:auto;scrollbar-width:none}
+.stepper::-webkit-scrollbar{display:none}
+.step-tab{flex:none;display:flex;flex-direction:column;align-items:center;gap:1px;min-width:86px;
+  padding:9px 10px;border-radius:10px;text-decoration:none;color:var(--mut);transition:.18s;border:1px solid transparent}
+.step-tab .num{font-family:'JetBrains Mono';font-size:11px;font-weight:600;color:var(--faint)}
+.step-tab .lbl{font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase}
+.step-tab:hover{background:var(--acc-soft)}
+.step-tab.active{background:var(--ink);border-color:var(--ink)}
+.step-tab.active .num{color:#c9b8ff}.step-tab.active .lbl{color:#fff}
+.step-tab.done .num{color:var(--ok)}
+
+/* ── sections ── */
+section.block{scroll-margin-top:130px;margin-bottom:18px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:26px;box-shadow:var(--shadow)}
+.shead{display:flex;gap:14px;align-items:flex-start;margin-bottom:18px}
+.snum{flex:none;width:34px;height:34px;border-radius:10px;display:grid;place-items:center;
+  font-family:'JetBrains Mono';font-weight:600;font-size:13px;color:#fff;background:linear-gradient(135deg,var(--acc),#8b5cf6)}
+.card.done-step .snum{background:linear-gradient(135deg,var(--ok),#34d399)}
+.shead h2{font-family:'Space Grotesk';font-size:19px;font-weight:700;letter-spacing:-.01em}
+.shead p{font-size:13px;color:var(--mut);margin-top:2px}
+
+.note{display:flex;gap:9px;align-items:flex-start;font-size:12.5px;background:var(--acc-soft);
+  border:1px solid var(--acc-line);border-left:3px solid var(--acc);border-radius:10px;padding:10px 13px;margin-bottom:16px}
+.note.warn{background:var(--warn-soft);border-color:#f2e3bb;border-left-color:#d97706}
+.note b{font-weight:700}
+.locknote{display:none;margin-bottom:14px;font-size:12.5px;font-weight:600;color:var(--warn-ink);
+  background:var(--warn-soft);border:1px dashed #ecd9a8;border-radius:10px;padding:10px 13px}
+
+label{display:block;font-size:11.5px;font-weight:700;color:var(--mut);margin:16px 0 6px;
+  text-transform:uppercase;letter-spacing:.08em}
+input[type=text],input[type=password],textarea{width:100%;background:var(--card2);
+  border:1px solid var(--line2);border-radius:11px;color:var(--ink);padding:13px 14px;
+  font-size:14.5px;font-family:inherit;outline:none;transition:.18s}
+input:focus,textarea:focus{border-color:var(--acc);box-shadow:0 0 0 3px rgba(109,40,217,.13);background:#fff}
+textarea{resize:vertical;min-height:110px}
+input.mono,textarea.mono{font-family:'JetBrains Mono';font-size:13px}
+
+/* 👁 password field with eye */
+.pwrap{position:relative}
+.pwrap input{padding-right:48px}
+.eye{position:absolute;right:8px;top:50%;transform:translateY(-50%);width:34px;height:34px;
+  background:none;border:none;cursor:pointer;color:var(--faint);border-radius:9px;
+  display:grid;place-items:center;transition:.15s}
+.eye:hover{color:var(--acc);background:var(--acc-soft)}
+.eye svg{width:19px;height:19px}
+
+.hint{font-size:12px;color:var(--faint);margin-top:6px}
+.err-msg{display:none;color:var(--err);font-size:13px;font-weight:500;margin-top:10px}
+.shake{animation:shake .4s}@keyframes shake{25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+
+.meter{height:5px;border-radius:99px;background:#ececf2;margin-top:9px;display:flex;gap:3px;overflow:hidden}
+.meter i{flex:1;border-radius:99px;transition:.25s}
+.meter i.on{background:linear-gradient(90deg,var(--acc),var(--pink))}
+.mlabel{font-size:12px;font-weight:600;margin-top:6px;color:var(--faint)}
+.mlabel.s1{color:var(--err)}.mlabel.s2{color:var(--warn-ink)}.mlabel.s3{color:var(--ok)}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;border:none;
+  border-radius:11px;font-weight:600;font-size:14px;font-family:inherit;padding:12px 20px;transition:.18s;color:#fff;background:var(--ink)}
+.btn:hover{transform:translateY(-1px);box-shadow:0 8px 20px -10px rgba(21,21,31,.5)}
+.btn.primary{background:linear-gradient(135deg,var(--acc),#8b5cf6)}
+.btn.ghost{background:var(--card);color:var(--ink);border:1px solid var(--line2)}
+.btn.ghost:hover{border-color:var(--acc);box-shadow:none}
+.btn.danger{background:var(--card);color:var(--err);border:1px solid #f3caca}
+.btn.sm{padding:8px 14px;font-size:12.5px;border-radius:9px}
+.btn:disabled{opacity:.55;cursor:not-allowed;transform:none;box-shadow:none}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.checkline{display:flex;gap:10px;align-items:flex-start;font-size:13.5px;margin-top:16px;cursor:pointer;user-select:none}
+.checkline input{width:auto;margin-top:3px;accent-color:var(--acc)}
+.nextrow{margin-top:22px;padding-top:18px;border-top:1px dashed var(--line)}
+
+.prev-wrap{margin-top:20px;border:1px dashed var(--line2);border-radius:14px;padding:18px;background:var(--card2)}
+.prev-head{font-size:11px;font-weight:700;color:var(--faint);letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px}
+.bubble{background:#fff;border:1px solid var(--line);border-radius:14px 14px 14px 4px;padding:14px 16px;max-width:560px;box-shadow:var(--shadow)}
+.bub-top{display:flex;align-items:center;gap:10px;margin-bottom:7px}
+.avatar{width:30px;height:30px;flex:none;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:13px;color:#fff;
+  background:linear-gradient(135deg,var(--acc),var(--pink))}
+.bub-name{font-size:13px;font-weight:700}
+.bub-did{font-size:10.5px;color:var(--faint);font-family:'JetBrains Mono'}
+.bub-time{margin-left:auto;font-size:10.5px;color:var(--faint)}
+.bub-body{font-size:13.5px;white-space:pre-wrap;word-break:break-word;color:#333}
+.bub-empty{color:var(--faint);font-style:italic}
+.count{text-align:right;font-size:12px;color:var(--faint);margin-top:5px}
+.count.good{color:var(--ok);font-weight:600}
+
+.proof{border:1px solid var(--line);border-radius:13px;padding:16px 17px;margin-bottom:11px;background:var(--card2)}
+.proof h3{font-size:14.5px;font-weight:700;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.kindtag{font-size:10px;font-weight:700;letter-spacing:.05em;padding:3px 8px;border-radius:6px;text-transform:uppercase}
+.kindtag.intro{background:#e8f4fd;color:#0369a1}
+.kindtag.work{background:var(--acc-soft);color:var(--acc)}
+.meta{font-size:11.5px;color:var(--faint);margin-top:5px;word-break:break-all;font-family:'JetBrains Mono'}
+.actions{display:flex;gap:7px;margin-top:12px;flex-wrap:wrap}
+.vchip{font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:999px}
+.vchip.ok{background:var(--ok-soft);color:var(--ok)}
+.vchip.bad{background:var(--err-soft);color:var(--err)}
+.empty{text-align:center;color:var(--faint);font-size:13px;padding:24px;border:1px dashed var(--line2);border-radius:12px}
+
+.kv{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:11px 0;border-bottom:1px dashed var(--line)}
+.kv:last-child{border:none}
+.kv .k{font-size:10.5px;font-weight:700;color:var(--faint);text-transform:uppercase;letter-spacing:.09em;flex:none}
+
+/* ══ SIDEBAR ══ */
+aside.rail{position:sticky;top:84px;display:flex;flex-direction:column;gap:16px}
+.railcard{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:20px;box-shadow:var(--shadow)}
+.railhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.railhead h3{font-family:'Space Grotesk';font-size:13px;font-weight:700;letter-spacing:.12em;text-transform:uppercase}
+.badge{font-size:10px;font-weight:700;letter-spacing:.08em;padding:4px 9px;border-radius:999px;background:#f0f0f4;color:var(--faint)}
+.vaultico{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;font-size:20px;margin:2px auto 14px;
+  background:linear-gradient(135deg,var(--acc-soft),#fdeef7);border:1px solid var(--acc-line)}
+.rsec{margin-bottom:13px}.rsec:last-child{margin-bottom:0}
+.rlab{font-size:9.5px;font-weight:700;color:var(--faint);letter-spacing:.12em;text-transform:uppercase;margin-bottom:3px;display:flex;justify-content:space-between;align-items:center}
+.rbig{font-size:13.5px;font-weight:600}
+.rbig.dim{color:var(--faint);font-weight:500}
+.stat-chip{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:700;padding:5px 12px;border-radius:999px;background:#f0f0f4;color:var(--faint)}
+.stat-chip.on{background:var(--ok-soft);color:var(--ok)}
+.stat-chip.on::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--ok)}
+.act-list{list-style:none;max-height:190px;overflow:auto}
+.act-list li{display:flex;gap:9px;font-size:12px;padding:7px 0;border-bottom:1px dashed var(--line);color:var(--mut)}
+.act-list li:last-child{border:none}
+.act-list .t{flex:none;font-family:'JetBrains Mono';font-size:10px;color:var(--faint);padding-top:2px}
+.copybtn{cursor:pointer;background:var(--card);border:1px solid var(--line2);border-radius:7px;color:var(--mut);
+  padding:3px 9px;font-size:10.5px;font-weight:600;transition:.15s;font-family:'Inter';flex:none}
+.copybtn:hover{color:var(--acc);border-color:var(--acc)}
+.pct{font-family:'Space Grotesk';font-weight:700}
+.pbar{height:7px;border-radius:99px;background:#ececf2;overflow:hidden;margin:10px 0 8px}
+.pbar i{display:block;height:100%;width:0%;border-radius:99px;transition:width .6s cubic-bezier(.22,1,.36,1);
+  background:linear-gradient(90deg,var(--acc),var(--pink))}
+.pcap{font-size:11.5px;color:var(--faint)}
+
+footer{max-width:1180px;margin:0 auto;padding:0 22px 50px;color:var(--faint);font-size:12px;line-height:1.9;text-align:center}
+
+.overlay{position:fixed;inset:0;background:rgba(21,21,31,.4);backdrop-filter:blur(5px);display:none;place-items:center;z-index:60;padding:20px}
+.overlay.show{display:grid}
+.modal{background:#fff;border:1px solid var(--line);border-radius:18px;max-width:640px;width:100%;
+  max-height:88vh;overflow:auto;padding:26px;box-shadow:0 30px 70px -30px rgba(21,21,31,.45)}
+.modal h2{font-family:'Space Grotesk';font-size:18px;margin-bottom:14px}
+pre{background:#16161f;color:#c8f7dd;border:none;border-radius:11px;padding:15px;font-size:11.5px;
+  overflow:auto;max-height:240px;font-family:'JetBrains Mono';white-space:pre-wrap;word-break:break-all}
+.xbtn{float:right;cursor:pointer;background:none;border:none;color:var(--faint);font-size:20px;font-family:inherit}
+.xbtn:hover{color:var(--ink)}
+
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(16px);opacity:0;
+  background:var(--ink);color:#fff;padding:12px 20px;border-radius:12px;font-size:13.5px;font-weight:600;
+  z-index:99;transition:.3s;pointer-events:none;box-shadow:0 12px 30px rgba(0,0,0,.3);max-width:88vw}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+.raillaunch{display:none}
+@media(max-width:1000px){
+  .shell{grid-template-columns:1fr}
+  aside.rail{position:fixed;top:0;right:0;bottom:0;width:min(340px,92vw);z-index:70;background:var(--bg);
+    padding:18px;overflow:auto;transform:translateX(105%);transition:.3s;box-shadow:-20px 0 60px rgba(21,21,31,.2)}
+  aside.rail.open{transform:none}
+  .raillaunch{display:flex;position:fixed;bottom:20px;right:20px;z-index:65;align-items:center;gap:8px;
+    background:var(--ink);color:#fff;border:none;border-radius:999px;padding:13px 20px;font-weight:700;
+    font-size:13.5px;font-family:inherit;cursor:pointer;box-shadow:0 12px 30px rgba(21,21,31,.4)}
+  .railclose{display:block;margin-left:auto}
+}
+.railclose{display:none;cursor:pointer;background:var(--card);border:1px solid var(--line);border-radius:8px;
+  padding:4px 10px;font-family:inherit;font-size:12px;color:var(--mut)}
+@media(prefers-reduced-motion:reduce){
+  *{animation-duration:.001ms!important;transition-duration:.001ms!important;scroll-behavior:auto!important}
+}
+</style>
+</head>
+<body>
+
+<div class="storagewarn" id="storageWarn">⚠️ Browser storage is blocked in this preview — everything works, but nothing survives a reload. Download your backup file & open the app in a normal tab.</div>
+
+<nav class="topnav"><div class="in">
+  <a class="brand" href="#top">
+    <span class="gem">✦</span>
+    <span><b>SIGIL</b><span>Technocore DID assistant · unofficial</span></span>
+  </a>
+  <div class="navright">
+    <span class="statuspill"><span class="sdot" id="navDot"></span><span id="navTxt">locked</span></span>
+  </div>
+</div></nav>
+
+<div class="shell" id="top">
+
+<main>
+
+  <!-- HERO -->
+  <header style="margin-bottom:6px">
+    <div class="eyebrow">Community Build × Flop Labs × Technocore</div>
+    <h1 class="disp">Your identity, sealed.<br>Proof you can <span class="grad">verify.</span></h1>
+    <p class="lede">Generate a real <b>P-256 keypair</b> (<span class="mono">did:flop:…</span>) entirely in your browser,
+      back it up encrypted, publish signed intros &amp; work logs to Technocore, and share verifiable evidence.</p>
+    <div class="chiprow">
+      <span class="chip f-ok">✓ 100% client-side</span>
+      <span class="chip f-ok">✓ Encrypted backups (AES-256)</span>
+      <span class="chip f-acc">⚡ ECDSA-signed proofs</span>
+      <span class="chip f-acc">🧭 Guided six-step flow</span>
+      <span class="chip f-acc">🔒 Auto-lock</span>
+    </div>
+    <div class="chiprow">
+      <span class="chip">REAL P-256 KEYS</span>
+      <span class="chip">PRIVATE KEY LOCAL</span>
+      <span class="chip">ZERO BACKEND</span>
+      <span class="chip">BUILT-IN VERIFIER</span>
+    </div>
+  </header>
+
+  <!-- STEPPER -->
+  <nav class="stepper" id="stepper">
+    <a class="step-tab active" href="#s1"><span class="num">01</span><span class="lbl">Start</span></a>
+    <a class="step-tab" href="#s2"><span class="num">02</span><span class="lbl">Save</span></a>
+    <a class="step-tab" href="#s3"><span class="num">03</span><span class="lbl">Intro</span></a>
+    <a class="step-tab" href="#s4"><span class="num">04</span><span class="lbl">Work</span></a>
+    <a class="step-tab" href="#s5"><span class="num">05</span><span class="lbl">Record</span></a>
+    <a class="step-tab" href="#s6"><span class="num">06</span><span class="lbl">Share</span></a>
+  </nav>
+
+  <!-- 01 START -->
+  <section class="block" id="s1">
+    <div class="card" id="card1">
+      <div class="shead"><span class="snum">1</span>
+        <div><h2>Create your Technocore DID</h2><p>A real P-256 keypair is generated locally. Your public key hashes into your <span class="mono">did:flop:…</span>.</p></div>
+      </div>
+      <div class="note">🔐 <span><b>Security</b> — your private key is generated locally and never sent anywhere. Only signed payloads are ever published.</span></div>
+      <label>Passphrase</label>
+      <div class="pwrap">
+        <input type="password" id="npass" placeholder="min. 12 characters — mix words, numbers, symbols" autocomplete="new-password">
+        <button class="eye" type="button" onclick="togglePw(this,'npass')" aria-label="Show passphrase"></button>
+      </div>
+      <div class="meter"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+      <div class="mlabel" id="mlabel">enter a passphrase</div>
+      <div class="row" style="margin-top:8px"><button class="btn ghost sm" onclick="suggestPass()">🎲 Suggest strong passphrase</button></div>
+      <label>Repeat passphrase</label>
+      <div class="pwrap">
+        <input type="password" id="npass2" autocomplete="new-password">
+        <button class="eye" type="button" onclick="togglePw(this,'npass2')" aria-label="Show passphrase"></button>
+      </div>
+      <div class="err-msg" id="cerr"></div>
+      <div class="row" style="margin-top:18px">
+        <button class="btn primary" id="createBtn" onclick="createIdentity()">Create My Identity</button>
+        <button class="btn ghost" onclick="document.getElementById('importPane').classList.toggle('hidden')">I have a backup file</button>
+      </div>
+      <!-- import pane -->
+      <div id="importPane" class="hidden" style="margin-top:20px;border-top:1px dashed var(--line);padding-top:18px">
+        <h2 class="disp" style="font-size:16px">Restore from backup</h2>
+        <p class="hint" style="margin:4px 0 12px">Load your <span class="mono">.vault.json</span>, enter its passphrase, unlock.</p>
+        <div class="row">
+          <input type="file" id="fileIn" accept=".json,application/json" style="max-width:340px;padding:10px">
+          <button class="btn ghost sm" onclick="document.getElementById('fileIn').click()">📂 Choose file</button>
+        </div>
+        <div class="hint" id="impHint">No file selected.</div>
+        <div class="err-msg" id="ierr"></div>
+        <label>Passphrase for loaded backup</label>
+        <div class="pwrap">
+          <input type="password" id="upass2" autocomplete="current-password" onkeydown="if(event.key==='Enter')unlockImported()">
+          <button class="eye" type="button" onclick="togglePw(this,'upass2')" aria-label="Show passphrase"></button>
+        </div>
+        <div class="row" style="margin-top:12px"><button class="btn primary" id="unlockBtn" onclick="unlockImported()">Unlock backup →</button></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 02 SAVE -->
+  <section class="block" id="s2">
+    <div class="card" id="card2">
+      <div class="locknote">🔒 Create your identity in step 01 first.</div>
+      <div class="shead"><span class="snum">2</span>
+        <div><h2>Save your identity</h2><p>Download an encrypted browser backup. Keep the file and passphrase separate.</p></div>
+      </div>
+      <div class="note warn">⚠️ <span><b>Never share</b> your private key, backup file, or passphrase. Your DID is safe to publish.</span></div>
+      <div data-need="identity">
+        <div class="row">
+          <button class="btn primary" onclick="downloadBackup()">⬇ Download encrypted backup</button>
+          <button class="btn ghost" onclick="cp(state.record.did)">📋 Copy DID</button>
+          <button class="btn ghost" onclick="showKeyInfo()">🔑 Key details</button>
+        </div>
+        <label class="checkline"><input type="checkbox" id="saveConfirm" onchange="confirmSaved()">
+          <span>I downloaded the backup and stored my passphrase safely.</span></label>
+        <div class="nextrow"><button class="btn primary" onclick="jump('s3')">Next: Introduce Yourself →</button></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 03 INTRO -->
+  <section class="block" id="s3">
+    <div class="card" id="card3">
+      <div class="locknote">🔒 Create &amp; unlock your identity first.</div>
+      <div class="shead"><span class="snum">3</span>
+        <div><h2>Introduce yourself</h2><p>Your intro is signed locally. Post the plain text to the Technocore lobby, then export the proof.</p></div>
+      </div>
+      <div data-need="unlocked">
+        <label>Your introduction</label>
+        <textarea id="introBody" maxlength="600" placeholder="gm Technocore! I'm a builder interested in…" oninput="onDraftInput()"></textarea>
+        <div class="count" id="count">0 / 600</div>
+        <div class="prev-wrap">
+          <div class="prev-head">👁 Live lobby preview</div>
+          <div class="bubble">
+            <div class="bub-top">
+              <span class="avatar" id="pvAv">?</span>
+              <span><span class="bub-name">you</span> <span class="bub-did" id="pvDid"></span></span>
+              <span class="bub-time">now</span>
+            </div>
+            <div class="bub-body bub-empty" id="pvBody">start typing…</div>
+          </div>
+        </div>
+        <div class="row" style="margin-top:16px">
+          <button class="btn primary" id="signIntroBtn" onclick="signEntry('intro')">🔏 Sign introduction</button>
+          <button class="btn ghost" onclick="clearIntro()">Clear</button>
+        </div>
+        <div class="nextrow"><button class="btn primary" onclick="jump('s4')">Next: Log Your Work →</button></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 04 WORK -->
+  <section class="block" id="s4">
+    <div class="card" id="card4">
+      <div class="locknote">🔒 Create &amp; unlock your identity first.</div>
+      <div class="shead"><span class="snum">4</span>
+        <div><h2>Log useful work</h2><p>Built a tool? Wrote a guide? Describe it precisely — quality beats quantity.</p></div>
+      </div>
+      <div data-need="unlocked">
+        <label>Title</label>
+        <input type="text" id="workTitle" maxlength="80" placeholder="e.g. Open-source proof verifier for Technocore" oninput="onDraftInput()">
+        <label>Description</label>
+        <textarea id="workBody" maxlength="600" placeholder="What you built, why it matters, link to repo/artifact…" oninput="onDraftInput()"></textarea>
+        <div class="count" id="wcount">0 / 600</div>
+        <div class="row" style="margin-top:16px">
+          <button class="btn primary" id="signWorkBtn" onclick="signEntry('work')">🔏 Sign work entry</button>
+          <button class="btn ghost" onclick="clearWork()">Clear</button>
+        </div>
+        <div class="nextrow"><button class="btn primary" onclick="jump('s5')">Next: Review Records →</button></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 05 RECORD -->
+  <section class="block" id="s5">
+    <div class="card" id="card5">
+      <div class="locknote">🔒 Signed proofs appear here once you complete steps 03–04.</div>
+      <div class="shead"><span class="snum">5</span>
+        <div><h2>Signed proof records</h2><p>Every entry is re-verified against its signature each render. Stored on-device only.</p></div>
+      </div>
+      <div class="row" style="margin-bottom:14px">
+        <button class="btn ghost sm" onclick="openVerifier()">🔎 Verify external proof</button>
+      </div>
+      <div id="proofList"></div>
+      <div class="nextrow"><button class="btn primary" onclick="jump('s6')">Next: Share Evidence →</button></div>
+    </div>
+  </section>
+
+  <!-- 06 SHARE -->
+  <section class="block" id="s6">
+    <div class="card" id="card6">
+      <div class="locknote">🔒 Export a proof in step 05 first.</div>
+      <div class="shead"><span class="snum">6</span>
+        <div><h2>Share your evidence</h2><p>Pick any proof and generate an X post carrying your DID + proof hash. Personalise before posting.</p></div>
+      </div>
+      <div data-need="anyProof"><div id="shareList"></div></div>
+    </div>
+  </section>
+
+</main>
+
+<!-- ══════════ SIDEBAR RAIL ══════════ -->
+<aside class="rail" id="rail">
+  <div class="railcard">
+    <div class="railhead"><h3>Your Vault</h3>
+      <span style="display:flex;gap:8px;align-items:center">
+        <span class="badge">LOCAL</span>
+        <button class="railclose" onclick="toggleRail(false)">✕ close</button>
+      </span>
+    </div>
+    <div class="vaultico" id="vaultIco">🔒</div>
+    <div class="rsec"><div class="rlab">Identity</div><div class="rbig dim" id="rIdent">Not created yet</div></div>
+    <div class="rsec"><div class="rlab">Public DID <button class="copybtn" id="rDidCopy" onclick="copyDid()" style="visibility:hidden">copy</button></div>
+      <div class="rbig dim mono" id="rDid" style="font-size:12px">—</div></div>
+    <div class="rsec"><div class="rlab">Lobby ID</div><div class="rbig dim mono" id="rLobby" style="font-size:12px">—</div></div>
+    <div class="rsec"><div class="rlab">Contribution</div><div class="rbig dim" id="rProofs">0 proofs signed</div></div>
+    <div class="rsec"><div class="rlab">Status</div><span class="stat-chip" id="rStatus">Inactive</span></div>
+    <div class="rsec"><div class="rlab">Recent activity</div>
+      <ul class="act-list" id="actList"><li><span class="t">—</span><span>No activity yet.</span></li></ul></div>
+    <p class="pcap" style="margin-top:12px">Never enter your seed phrase or passphrase on external sites. Technocore, GitHub, or support staff will never ask.</p>
+  </div>
+  <div class="railcard">
+    <div class="railhead"><h3>Progress</h3><span class="pct mono" id="pPct" style="font-size:20px">0%</span></div>
+    <div class="pbar"><i id="pFill"></i></div>
+    <div class="pcap" id="pCap">Complete the six-step flow to build your public Technocore contribution trail.</div>
+  </div>
+  <div class="railcard">
+    <div class="row" style="justify-content:space-between">
+      <button class="btn ghost sm" onclick="downloadBackup()">💾 Backup</button>
+      <button class="btn ghost sm" onclick="lock()">🔒 Lock</button>
+      <button class="btn danger sm" onclick="wipe()">🗑 Wipe</button>
+    </div>
+  </div>
+</aside>
+
+<button class="raillaunch" onclick="toggleRail(true)">🪪 Vault</button>
+</div><!-- /shell -->
+
+<footer>
+  ✦ SIGIL — unofficial community tooling. Not affiliated with or endorsed by Flop Labs / Technocore.<br>
+  All cryptography runs locally via the Web Crypto API · no analytics · no network calls · keys never leave this tab.<br>
+  Verify announcements through official channels only. Never enter an existing wallet seed phrase anywhere.
+</footer>
+
+<div class="overlay" id="overlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <button class="xbtn" onclick="closeModal()">✕</button>
+    <h2 id="mTitle"></h2>
+    <div id="mBody"></div>
+  </div>
+</div>
+<div id="toast"></div>
+
+<script>
+'use strict';
+/* ═══════ helpers ═══════ */
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const enc=new TextEncoder();
+let state={record:null,privKey:null,unlocked:false};
+
+/* safe storage: falls back to memory when sandboxed (fixes the preview error) */
+const mem={};
+const store={
+  ok:(()=>{try{localStorage.setItem('__t','1');localStorage.removeItem('__t');return true}catch{return false}})(),
+  get(k){try{return localStorage.getItem(k)}catch{return mem[k]??null}},
+  set(k,v){try{localStorage.setItem(k,v)}catch{mem[k]=v}},
+  del(k){try{localStorage.removeItem(k)}catch{delete mem[k]}}
+};
+if(!store.ok)document.getElementById('storageWarn').classList.add('show');
+
+const LS_ID='sigil.identity',LS_PROOFS='sigil.proofs',LS_DRAFT='sigil.draft',
+      LS_FLAGS='sigil.flags',LS_ACT='sigil.activity';
+
+const b64=b=>btoa([...new Uint8Array(b)].map(x=>String.fromCharCode(x)).join(''));
+function ub64(s){const t=atob(s),u=new Uint8Array(t.length);for(let i=0;i<t.length;i++)u[i]=t.charCodeAt(i);return u.buffer}
+const hex=b=>[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('');
+const sha256=b=>crypto.subtle.digest('SHA-256',b);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const payloadOf=c=>[c.createdAt,c.title||'',c.content].join('\n');
+const shortDid=d=>d.slice(0,17)+'…'+d.slice(-6);
+const hhmm=ts=>new Date(ts).toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
+const fmtDate=ts=>new Date(ts).toLocaleDateString(undefined,{month:'short',day:'numeric'});
+
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');
+  clearTimeout(t._x);t._x=setTimeout(()=>t.classList.remove('show'),2600)}
+function cp(t){navigator.clipboard.writeText(t).then(()=>toast('📋 Copied'))}
+let _dlFallback='';
+function copyDlFallback(){cp(_dlFallback)}
+function dl(name,text){
+  // Never synthetically .click() a hidden download link — in sandboxed/embedded
+  // previews that can fail as a blocked top-level navigation (not a catchable JS
+  // error), which was replacing the whole app with a "content blocked" page.
+  // Always show the file in a modal instead, with a real link the user clicks
+  // themselves plus a copy fallback that always works.
+  _dlFallback=text;
+  const blobUrl=URL.createObjectURL(new Blob([text],{type:'application/json'}));
+  showModal('⬇ Save your file',
+    `<p class="hint" style="margin-bottom:12px">Click below to download, or copy the JSON and save it yourself as <b class="mono">${esc(name)}</b>.</p>
+     <div class="row" style="margin-bottom:14px">
+       <a class="btn primary" href="${blobUrl}" download="${esc(name)}">⬇ Download ${esc(name)}</a>
+       <button class="btn ghost" onclick="copyDlFallback()">📋 Copy JSON</button>
+     </div>
+     <pre>${esc(text)}</pre>`);
+  return true;
+}
+function showModal(title,html){$('#mTitle').textContent=title;$('#mBody').innerHTML=html;$('#overlay').classList.add('show')}
+function closeModal(){$('#overlay').classList.remove('show')}
+function jump(id){document.getElementById(id).scrollIntoView({behavior:'smooth'})}
+function toggleRail(open){$('#rail').classList.toggle('open',open)}
+const flags=()=>{try{return JSON.parse(store.get(LS_FLAGS)||'{}')}catch{return{}}};
+const setFlag=(k,v)=>{const f=flags();f[k]=v;store.set(LS_FLAGS,JSON.stringify(f))};
+const acts=()=>{try{return JSON.parse(store.get(LS_ACT)||'[]')}catch{return[]}};
+function logAct(text){const a=acts();a.unshift({ts:Date.now(),text});store.set(LS_ACT,JSON.stringify(a.slice(0,14)))}
+
+/* ═══════ eye toggles ═══════ */
+const EYE='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+const EYE_OFF='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
+function setEyeIcon(btn,visible){btn.innerHTML=visible?EYE_OFF:EYE;
+  btn.setAttribute('aria-label',visible?'Hide passphrase':'Show passphrase')}
+function togglePw(btn,id){
+  const inp=document.getElementById(id);
+  const show=inp.type==='password';
+  inp.type=show?'text':'password';
+  setEyeIcon(btn,show);
+}
+document.querySelectorAll('.eye').forEach(b=>setEyeIcon(b,false));
+
+/* ═══════ crypto core ═══════ */
+const KDF_ITERATIONS=600000; // OWASP-recommended floor for PBKDF2-SHA256 (2023 guidance)
+async function deriveAES(pass,salt,iterations=KDF_ITERATIONS){
+  const base=await crypto.subtle.importKey('raw',enc.encode(pass),'PBKDF2',false,['deriveKey']);
+  return crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations,hash:'SHA-256'},
+    base,{name:'AES-GCM',length:256},false,['encrypt','decrypt']);
+}
+async function createIdentity(){
+  const err=$('#cerr'),btn=$('#createBtn');err.style.display='none';
+  const p=$('#npass').value,p2=$('#npass2').value;
+  if(p.length<12){err.textContent='Passphrase must be at least 12 characters.';err.style.display='block';return}
+  if(p!==p2){err.textContent='Passphrases don\u2019t match.';err.style.display='block';return}
+  btn.disabled=true;btn.textContent='Sealing…';
+  try{
+    const kp=await crypto.subtle.generateKey({name:'ECDSA',namedCurve:'P-256'},true,['sign','verify']);
+    const privJwk=await crypto.subtle.exportKey('jwk',kp.privateKey);delete privJwk.ext;delete privJwk.key_ops;
+    const pubJwk=await crypto.subtle.exportKey('jwk',kp.publicKey);delete pubJwk.ext;delete pubJwk.key_ops;
+    const did='did:flop:'+hex(await sha256(await crypto.subtle.exportKey('raw',kp.publicKey)));
+    const salt=crypto.getRandomValues(new Uint8Array(16)),iv=crypto.getRandomValues(new Uint8Array(12));
+    const key=await deriveAES(p,salt,KDF_ITERATIONS);
+    const ct=await crypto.subtle.encrypt({name:'AES-GCM',iv},key,enc.encode(JSON.stringify(privJwk)));
+    state.record={v:3,app:'sigil',kdf:`PBKDF2-SHA256-${KDF_ITERATIONS}`,kdfIterations:KDF_ITERATIONS,cipher:'AES-256-GCM',
+      salt:b64(salt),iv:b64(iv),ct:b64(ct),pub:pubJwk,did,createdAt:Date.now()};
+    store.set(LS_ID,JSON.stringify(state.record));
+    state.privKey=kp.privateKey;state.unlocked=true;
+    $('#npass').value=$('#npass2').value='';
+    logAct('Identity created');
+    refresh();
+    toast('✦ Identity sealed — download your backup in Step 2 →');
+    jump('s2');
+  }catch(e){err.textContent='Crypto unavailable: '+e.message;err.style.display='block'}
+  finally{btn.disabled=false;btn.textContent='Create My Identity'}
+}
+async function tryUnlock(pass,r){
+  const key=await deriveAES(pass,ub64(r.salt),r.kdfIterations||310000);
+  const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:new Uint8Array(ub64(r.iv))},key,ub64(r.ct));
+  const jwk=JSON.parse(new TextDecoder().decode(pt));
+  state.privKey=await crypto.subtle.importKey('jwk',jwk,{name:'ECDSA',namedCurve:'P-256'},false,['sign']);
+  state.record=r;state.unlocked=true;
+  logAct('Vault unlocked');refresh();
+}
+async function unlockImported(){
+  const err=$('#ierr'),btn=$('#unlockBtn');err.style.display='none';
+  if(!state.record){err.textContent='Choose a backup file first.';err.style.display='block';return}
+  btn.disabled=true;btn.textContent='Unlocking…';
+  try{
+    await tryUnlock($('#upass2').value,state.record);
+    $('#upass2').value='';toast('🔓 Vault unlocked');
+  }catch{
+    $('#upass2').classList.add('shake');setTimeout(()=>$('#upass2').classList.remove('shake'),450);
+    err.textContent='Wrong passphrase — decryption failed.';err.style.display='block';
+  }finally{
+    btn.disabled=false;btn.textContent='Unlock backup →';
+  }
+}
+function lock(){state.privKey=null;state.unlocked=false;logAct('Vault locked');refresh();toast('🔒 Locked')}
+function wipe(){
+  if(!confirm('Delete this vault and ALL local data from this device?\nYour downloaded backup file is NOT affected.'))return;
+  [LS_ID,LS_PROOFS,LS_DRAFT,LS_FLAGS,LS_ACT].forEach(k=>store.del(k));
+  state={record:null,privKey:null,unlocked:false};
+  $('#introBody').value='';$('#workTitle').value='';$('#workBody').value='';
+  $('#npass').value='';$('#npass2').value='';meterUpdate();
+  refresh();toast('🗑 Wiped clean');
+}
+function downloadBackup(){
+  if(!state.record)return;
+  if(dl(state.record.did.replace(/:/g,'-')+'.vault.json',JSON.stringify(state.record,null,2))){
+    setFlag('backup',true);logAct('Encrypted backup downloaded');refresh();
+  }
+}
+function confirmSaved(){setFlag('backupConfirm',$('#saveConfirm').checked);logAct('Backup confirmed saved');refresh()}
+function copyDid(){if(state.record)cp(state.record.did)}
+
+/* ═══════ suggester + meter ═══════ */
+const WORDS=('anchor basil cactus dagger ember falcon garnet harbor iris jade kernel lumen marble nebula '+
+'onyx prism quartz raven sage tundra umbra velvet willow xenon yonder zenith amber brisk cobalt drift '+
+'eagle fable glint husk ivory jolly knack ledge mirth nudge orbit pixel quirk ridge spark tonic unity '+
+'valor whisk yield azure bloom crisp dune echo flint grove heist inlet joust karma lotus mimic north '+
+'oasis plume quill realm stone tempo usher vivid wagon').split(' ');
+function suggestPass(){
+  const pick=n=>[...crypto.getRandomValues(new Uint32Array(n))].map(x=>WORDS[x%WORDS.length]);
+  const sym='!@#$%&*?'[Math.floor(Math.random()*8)];
+  const p=pick(5).join('-')+'-'+String(Math.floor(Math.random()*90)+10)+sym;
+  $('#npass').value=p;$('#npass2').value=p;meterUpdate();
+  toast('🎲 Suggested — store it somewhere safe BEFORE creating');
+}
+function meterUpdate(){
+  const p=$('#npass').value;let s=0;
+  if(p.length>=8)s++;if(p.length>=12)s++;if(p.length>=16)s++;
+  if(/[a-z]/.test(p)&&/[A-Z]/.test(p))s++;if(/\d/.test(p))s++;if(/[^a-zA-Z0-9]/.test(p))s++;
+  [...$('.meter').children].forEach((bar,i)=>bar.classList.toggle('on',i<Math.min(s,6)&&!!p));
+  const m=$('#mlabel');m.className='mlabel'+(!p?'':s<=2?' s1':s<=4?' s2':' s3');
+  m.textContent=!p?'enter a passphrase':s<=2?'weak — add length & variety':s<=4?'fair — decent':'strong 💪';
+}
+$('#npass').addEventListener('input',meterUpdate);
+
+/* ═══════ compose & sign ═══════ */
+let pvMode='intro';
+function previewSource(){return pvMode==='work'
+  ?(($('#workTitle').value?$('#workTitle').value+'\n':'')+$('#workBody').value).trim()
+  :$('#introBody').value.trim()}
+function onDraftInput(){
+  const d={intro:$('#introBody').value,title:$('#workTitle').value,body:$('#workBody').value};
+  store.set(LS_DRAFT,JSON.stringify(d));
+  const n=d.intro.length,e=$('#count');
+  e.textContent=n+' / 600'+(n>0&&n<=280?' · fits a tweet ✓':'');
+  e.classList.toggle('good',n>0&&n<=280);
+  const m=(d.title+' '+d.body).trim().length,w=$('#wcount');
+  w.textContent=m+' / 600';w.classList.toggle('good',m>0&&m<=280);
+  const src=previewSource();
+  $('#pvDid').textContent=state.record?shortDid(state.record.did):'';
+  $('#pvAv').textContent=(src||'?').charAt(0).toUpperCase();
+  const bb=$('#pvBody');bb.classList.toggle('bub-empty',!src);
+  bb.textContent=src||'start typing…';
+}
+['#introBody','#workBody','#workTitle'].forEach(sel=>{
+  $(sel).addEventListener('focus',()=>{pvMode=sel==='#introBody'?'intro':'work';onDraftInput()});
+});
+function clearIntro(){$('#introBody').value='';onDraftInput()}
+function clearWork(){$('#workTitle').value='';$('#workBody').value='';onDraftInput()}
+
+async function signEntry(kind){
+  const content=(kind==='intro'?$('#introBody'):$('#workBody')).value.trim();
+  const title=kind==='work'?$('#workTitle').value.trim():undefined;
+  if(!content){toast('⚠️ Write something first');return}
+  if(!state.unlocked||!state.privKey){toast('🔒 Unlock your vault first');return}
+  const btn=$(kind==='intro'?'#signIntroBtn':'#signWorkBtn');
+  btn.disabled=true;
+  try{
+    const c={createdAt:new Date().toISOString(),...(title?{title}:{}),content};
+    const sig=await crypto.subtle.sign({name:'ECDSA',hash:'SHA-256'},state.privKey,enc.encode(payloadOf(c)));
+    const proof={schema:'technocore.contribution.v1',did:state.record.did,pub:state.record.pub,
+      kind,...c,sigAlg:'ES256',sig:b64(sig)};
+    proof.proofHash=hex(await sha256(enc.encode(JSON.stringify(
+      {schema:proof.schema,did:proof.did,payload:payloadOf(c),sig:proof.sig}))));
+    const ps=getProofs();ps.unshift(proof);store.set(LS_PROOFS,JSON.stringify(ps));
+    logAct((kind==='intro'?'Introduction':'Work entry')+' signed');
+    kind==='intro'?clearIntro():clearWork();
+    refresh();openProofModal(proof,true);
+  }catch(e){toast('⚠️ Signing failed: '+e.message)}
+  finally{btn.disabled=false}
+}
+function getProofs(){try{return JSON.parse(store.get(LS_PROOFS)||'[]')}catch{return[]}}
+const findProof=h=>getProofs().find(p=>p.proofHash===h);
+async function verifyProof(p){
+  try{
+    const pub=await crypto.subtle.importKey('jwk',p.pub,{name:'ECDSA',namedCurve:'P-256'},true,['verify']);
+    return await crypto.subtle.verify({name:'ECDSA',hash:'SHA-256'},pub,new Uint8Array(ub64(p.sig)),enc.encode(payloadOf(p)));
+  }catch{return false}
+}
+
+/* ═══════ proof UI ═══════ */
+function proofCardHTML(p,ok){
+  return `<h3>${esc((p.kind==='intro'?'👋 ':'🛠 ')+(p.title||(p.kind==='intro'?'Introduction':'Work entry')))}
+    <span class="kindtag ${esc(p.kind)}">${esc(p.kind)}</span>
+    <span class="vchip ${ok?'ok':'bad'}">${ok?'✓ valid':'✗ invalid'}</span></h3>
+    <div class="meta">${fmtDate(Date.parse(p.createdAt))} · ${esc(shortDid(p.did))}<br>${esc(String(p.proofHash).slice(0,26))}…</div>
+    <div class="actions">
+      <button class="btn ghost sm" onclick="viewJson('${p.proofHash}')">👁 JSON</button>
+      <button class="btn ghost sm" onclick="exportProof('${p.proofHash}')">⬇ Export</button>
+      <button class="btn ghost sm" onclick="openTemplate('${p.proofHash}')">📣 X post</button>
+      <button class="btn danger sm" onclick="delProof('${p.proofHash}')">🗑</button>
+    </div>`;
+}
+async function renderLists(){
+  const ps=getProofs(),box=$('#proofList');
+  box.innerHTML=ps.length?'':'<div class="empty">No proofs yet — sign your intro in step 03 ⬆</div>';
+  for(const p of ps){
+    const ok=await verifyProof(p);
+    const div=document.createElement('div');div.className='proof';div.innerHTML=proofCardHTML(p,ok);
+    box.appendChild(div);
+  }
+  const sh=$('#shareList');
+  sh.innerHTML=ps.length?'':'<div class="empty">Nothing to share yet.</div>';
+  for(const p of ps.slice(0,4)){
+    const div=document.createElement('div');div.className='proof';
+    div.innerHTML=`<h3>${esc(p.title||(p.kind==='intro'?'Introduction':'Work entry'))}</h3>
+      <div class="meta">${esc(String(p.proofHash).slice(0,26))}…</div>
+      <div class="actions"><button class="btn primary sm" onclick="openTemplate('${p.proofHash}')">📣 Generate X post</button></div>`;
+    sh.appendChild(div);
+  }
+}
+function viewJson(h){const p=findProof(h);if(p)showModal('Proof JSON',`<pre>${esc(JSON.stringify(p,null,2))}</pre>`)}
+function delProof(h){if(!confirm('Delete this proof locally?'))return;
+  store.set(LS_PROOFS,JSON.stringify(getProofs().filter(p=>p.proofHash!==h)));
+  logAct('Proof deleted');refresh()}
+function exportProof(h){const p=findProof(h);if(!p)return;
+  if(dl(`proof-${h.slice(0,8)}.json`,JSON.stringify(p,null,2))){
+    setFlag('export',true);logAct('Proof exported');refresh();toast('⬇ Proof exported');
+  }
+}
+function openProofModal(p,fresh){
+  showModal(fresh?'🎉 Signed! Next steps':'Proof detail',
+   `<ol style="padding-left:20px;font-size:13.5px;color:var(--mut);line-height:2;margin-bottom:14px">
+      <li>Post the plain message text into the <b>Technocore lobby</b>.</li>
+      <li>Export / attach this proof where contributions are collected.</li>
+      <li>Share on X with your DID visible.</li>
+    </ol>
+    <pre>${esc(JSON.stringify(p,null,2))}</pre>
+    <div class="row" style="margin-top:16px">
+      <button class="btn primary" onclick="closeModal();openTemplate('${p.proofHash}')">📣 Generate X post</button>
+      <button class="btn ghost" onclick="exportProof('${p.proofHash}')">⬇ Download</button>
+      <button class="btn ghost" onclick="cp(JSON.stringify(findProof('${p.proofHash}'),null,2))">📋 Copy JSON</button>
+    </div>`);
+}
+function openTemplate(h){
+  const p=findProof(h);if(!p)return;
+  const snip=((p.title?p.title+' — ':'')+p.content);
+  const tpl=
+`${p.kind==='intro'?'Just introduced myself to Technocore':'Shipped something for Technocore'} ✦
+
+💬 "${snip.slice(0,90)}${snip.length>90?'…':''}"
+🪪 ${shortDid(p.did)}
+🔏 proof ${String(p.proofHash).slice(0,16)}…
+
+Signed locally, keys never left my browser 🔐
+Tool/repo: <YOUR_LINK_HERE>
+
+@flop_labs #Technocore #FLOP`;
+  showModal('📣 Your X post — edit then copy',
+   `<textarea class="mono" id="tplTxt" style="min-height:210px">${esc(tpl)}</textarea>
+    <div class="row" style="margin-top:14px"><button class="btn primary" onclick="copyTpl()">📋 Copy post</button></div>
+    <p class="hint" style="margin-top:10px">💡 Swap in your real link and put it in your own words — a post that actually describes what you did reads better than a copy-pasted template.</p>`);
+}
+function copyTpl(){cp(document.getElementById('tplTxt').value);setFlag('share',true);logAct('Shared on X');refresh()}
+
+/* ═══════ verifier ═══════ */
+function openVerifier(){
+  showModal('🔎 Verify any proof',
+   `<p class="hint" style="margin-bottom:12px">Paste any proof JSON produced by SIGIL. Signature &amp; hash checked locally.</p>
+    <textarea class="mono" id="verIn" style="min-height:170px" placeholder='{ "schema": "technocore.contribution.v1", … }'></textarea>
+    <div class="row" style="margin-top:14px"><button class="btn primary" onclick="runVerify()">Verify</button></div>
+    <div id="verOut" style="margin-top:14px"></div>`);
+}
+async function runVerify(){
+  const out=$('#verOut');
+  try{
+    const p=JSON.parse($('#verIn').value);
+    const okSig=await verifyProof(p);
+    const expect=hex(await sha256(enc.encode(JSON.stringify({schema:p.schema,did:p.did,payload:payloadOf(p),sig:p.sig}))));
+    const okHash=expect===p.proofHash;
+    out.innerHTML=`<div class="empty" style="border-style:solid;border-color:${okSig&&okHash?'var(--ok)':'var(--err)'};color:${okSig&&okHash?'var(--ok)':'var(--err)'};font-weight:600">
+      ${okSig&&okHash?'✅ VALID — signature & hash verified':'❌ INVALID — '+(okSig?'hash mismatch':'signature invalid')}</div>`;
+  }catch{out.innerHTML='<div class="empty" style="border-style:solid;border-color:var(--err);color:var(--err)">❌ Could not parse proof JSON</div>'}
+}
+function showKeyInfo(){
+  const r=state.record;
+  showModal('🔑 Vault details',
+   `<div class="kv"><span class="k">DID</span><span class="mono" style="font-size:12px;word-break:break-all">${esc(r.did)}</span></div>
+    <div class="kv"><span class="k">KDF</span><span class="mono">${esc(r.kdf)}</span></div>
+    <div class="kv"><span class="k">Cipher</span><span class="mono">${esc(r.cipher)}</span></div>
+    <div class="kv"><span class="k">Signature</span><span class="mono">ECDSA P-256 (ES256)</span></div>
+    <div style="font-size:11px;font-weight:700;color:var(--faint);letter-spacing:.09em;margin:14px 0 6px">PUBLIC KEY JWK</div>
+    <pre>${esc(JSON.stringify(r.pub,null,2))}</pre>
+    <p class="hint" style="margin-top:10px">🔐 Your private key only ever exists decrypted in-memory while the vault is unlocked.</p>`);
+}
+
+/* ═══════ milestones ═══════ */
+function milestones(){
+  const f=flags(),ps=getProofs();
+  return [
+    {lbl:'Step 01 · Identity created', done:!!state.record},
+    {lbl:'Step 02 · Backup downloaded & confirmed', done:!!(f.backup&&f.backupConfirm)},
+    {lbl:'Step 03 · Introduction signed', done:ps.some(p=>p.kind==='intro')},
+    {lbl:'Step 04 · Work entry signed', done:ps.some(p=>p.kind==='work')},
+    {lbl:'Step 05 · Proof exported', done:!!f.export},
+    {lbl:'Step 06 · Evidence shared', done:!!f.share},
+  ];
+}
+
+/* ═══════ master refresh ═══════ */
+function refresh(){
+  const r=state.record,u=state.unlocked,f=flags(),ps=getProofs();
+  $('#navDot').classList.toggle('on',u);
+  $('#navTxt').textContent=u?'vault unlocked':'locked';
+  /* gates */
+  $$('section.block .card').forEach(sec=>{
+    const note=sec.querySelector('.locknote'),need=sec.querySelector('[data-need]');
+    if(!note||!need)return;
+    let blocked=false;
+    if(need.dataset.need==='identity')blocked=!r;
+    else if(need.dataset.need==='unlocked')blocked=!u;
+    else if(need.dataset.need==='anyProof')blocked=!ps.length;
+    note.classList.toggle('show',blocked);
+    need.style.opacity=blocked?.45:1;
+    need.style.pointerEvents=blocked?'none':'auto';
+    sec.classList.toggle('done-step',!blocked);
+  });
+  $('#card1').classList.toggle('done-step',!!r);
+  /* stepper ticks */
+  const ms=milestones();
+  $$('.step-tab').forEach((t,i)=>t.classList.toggle('done',ms[i]?.done));
+  /* rail */
+  $('#rIdent').textContent=r?(u?'Unlocked 🔓':'Created — locked 🔒'):'Not created yet';
+  $('#rIdent').className='rbig'+(r?'':' dim');
+  $('#rDid').textContent=r?shortDid(r.did):'—';
+  $('#rDid').className='rbig mono'+(r?'':' dim');$('#rDid').style.fontSize='12px';
+  $('#rDidCopy').style.visibility=r?'visible':'hidden';
+  $('#rLobby').textContent=r?('r/'+r.did.replace('did:flop:','').slice(0,10)):'—';
+  $('#rProofs').textContent=ps.length+(ps.length===1?' proof signed':' proofs signed');
+  $('#rProofs').className='rbig'+(ps.length?'':' dim');
+  const st=$('#rStatus');st.textContent=u?'Active':'Inactive';st.className='stat-chip'+(u?' on':'');
+  $('#vaultIco').textContent=u?'🔓':'🔒';
+  const al=acts(),list=$('#actList');
+  list.innerHTML=al.length
+    ?al.map(a=>`<li><span class="t">${hhmm(a.ts)}</span><span>${esc(a.text)}</span></li>`).join('')
+    :'<li><span class="t">—</span><span>No activity yet.</span></li>';
+  const done=ms.filter(m=>m.done).length,pct=Math.round(done/ms.length*100);
+  $('#pPct').textContent=pct+'%';$('#pFill').style.width=pct+'%';
+  $('#pCap').textContent=done===ms.length?'Full trail complete — see you at genesis 🚀'
+    :`Complete the six-step flow to build your public Technocore contribution trail. (${done}/6)`;
+  $('#saveConfirm').checked=!!(f.backup&&f.backupConfirm);
+  renderLists();
+  onDraftInput();
+}
+
+/* stepper: click always scrolls (don't rely on bare anchor-hash jumping, which
+   breaks inside nested/embedded scroll containers) */
+$$('.step-tab').forEach(t=>{
+  t.addEventListener('click',e=>{
+    e.preventDefault();
+    jump(t.getAttribute('href').slice(1));
+  });
+});
+
+/* stepper scroll-sync */
+const io=new IntersectionObserver(es=>{
+  es.forEach(e=>{if(e.isIntersecting)
+    $$('.step-tab').forEach(t=>t.classList.toggle('active',t.getAttribute('href')==='#'+e.target.id));
+  });
+},{rootMargin:'-120px 0px -50% 0px',threshold:0});
+$$('section.block').forEach(s=>io.observe(s));
+
+/* import */
+$('#fileIn').addEventListener('change',async e=>{
+  const fl=e.target.files[0];if(!fl)return;
+  const err=$('#ierr');err.style.display='none';
+  try{
+    const r=JSON.parse(await fl.text());
+    if(!r.v||!r.ct||!r.salt||!r.iv||!r.pub||!r.did)throw 0;
+    state.record=r;store.set(LS_ID,JSON.stringify(r));
+    $('#impHint').innerHTML=`✅ Loaded <b class="mono">${esc(shortDid(r.did))}</b> — enter its passphrase to unlock.`;
+    logAct('Backup imported');refresh();toast('📦 Backup loaded');
+  }catch{$('#impHint').textContent='';err.textContent='❌ Not a valid vault backup file.';err.style.display='block'}
+});
+
+/* idle auto-lock */
+let lastAct=Date.now();
+['pointerdown','keydown','wheel'].forEach(ev=>addEventListener(ev,()=>lastAct=Date.now(),{passive:true}));
+setInterval(()=>{if(state.unlocked&&Date.now()-lastAct>15*60*1000){lock();toast('⏱ Auto-locked after 15 min idle')}},30000);
+
+/* boot */
+(function(){
+  if(!window.crypto?.subtle){alert('Web Crypto required — serve over HTTPS.');return}
+  try{const r=store.get(LS_ID);if(r)state.record=JSON.parse(r)}catch{}
+  try{const d=JSON.parse(store.get(LS_DRAFT)||'null');
+    if(d){$('#introBody').value=d.intro||'';$('#workTitle').value=d.title||'';$('#workBody').value=d.body||''}}catch{}
+  refresh();
+})();
+</script>
+</body>
+</html>
