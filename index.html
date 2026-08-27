@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SIGIL — Technocore DID & Proof Studio</title>
-<meta name="description" content="Unofficial community studio for Technocore identities and signed contributions. Keys never leave your browser.">
+<title>SIGIL — Technocore DID & Lobby Studio</title>
+<meta name="description" content="Unofficial community studio for Technocore identities and signed lobby posts. Keys never leave your browser.">
 <link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">✦</text></svg>'>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
@@ -160,10 +160,13 @@ input.mono,textarea.mono{font-family:'JetBrains Mono';font-size:13px}
 .kindtag.intro{background:#e8f4fd;color:#0369a1}
 .kindtag.work{background:var(--acc-soft);color:var(--acc)}
 .meta{font-size:11.5px;color:var(--faint);margin-top:5px;word-break:break-all;font-family:'JetBrains Mono'}
+.meta a{color:var(--acc);text-decoration:none;font-weight:600}
+.meta a:hover{text-decoration:underline}
 .actions{display:flex;gap:7px;margin-top:12px;flex-wrap:wrap}
 .vchip{font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:999px}
 .vchip.ok{background:var(--ok-soft);color:var(--ok)}
 .vchip.bad{background:var(--err-soft);color:var(--err)}
+.vchip.dim{background:#f0f0f4;color:var(--faint)}
 .empty{text-align:center;color:var(--faint);font-size:13px;padding:24px;border:1px dashed var(--line2);border-radius:12px}
 .lobbyfeed{display:flex;flex-direction:column;gap:8px}.lobbyitem{padding:9px 10px;border:1px solid var(--line);border-radius:10px;background:#fff}.lobbyitem .lh{font-size:10.5px;color:var(--faint);margin-bottom:3px;font-family:'JetBrains Mono'}.lobbyitem .lt{font-size:12.5px;white-space:pre-wrap;word-break:break-word}
 
@@ -255,11 +258,11 @@ pre{background:#16161f;color:#c8f7dd;border:none;border-radius:11px;padding:15px
   <!-- HERO -->
   <header style="margin-bottom:6px">
     <div class="eyebrow">Community Build × Flop Labs × Technocore</div>
-    <h1 class="disp">Your identity, sealed.<br>Proof you can <span class="grad">verify.</span></h1>
+    <h1 class="disp">Your identity, sealed.<br>Posts you can <span class="grad">point to.</span></h1>
     <p class="lede">Generate a real <b>Ed25519 keypair</b> (<span class="mono">did:key:z6Mk…</span>) entirely in your browser,
-      back it up encrypted, publish <b>real Technocore-signed messages</b>, and share verifiable evidence.</p>
+      back it up encrypted, publish <b>signed messages to the live Technocore lobby</b>, and share the link as evidence.</p>
     <div class="chiprow">
-      <span class="chip f-ok">✓ 100% client-side</span>
+      <span class="chip f-ok">✓ 100% client-side keys</span>
       <span class="chip f-ok">✓ Encrypted backups (AES-256)</span>
       <span class="chip f-acc">⚡ Ed25519-signed Technocore posts</span>
       <span class="chip f-acc">🧭 Guided six-step flow</span>
@@ -269,7 +272,7 @@ pre{background:#16161f;color:#c8f7dd;border:none;border-radius:11px;padding:15px
       <span class="chip">REAL ED25519 KEYS</span>
       <span class="chip">PRIVATE KEY LOCAL</span>
       <span class="chip">VERCEL BRIDGE → TECHNOCORE</span>
-      <span class="chip">BUILT-IN VERIFIER</span>
+      <span class="chip">LIVE LOBBY POSTS</span>
     </div>
   </header>
 
@@ -279,7 +282,7 @@ pre{background:#16161f;color:#c8f7dd;border:none;border-radius:11px;padding:15px
     <a class="step-tab" href="#s2"><span class="num">02</span><span class="lbl">Save</span></a>
     <a class="step-tab" href="#s3"><span class="num">03</span><span class="lbl">Intro</span></a>
     <a class="step-tab" href="#s4"><span class="num">04</span><span class="lbl">Work</span></a>
-    <a class="step-tab" href="#s5"><span class="num">05</span><span class="lbl">Record</span></a>
+    <a class="step-tab" href="#s5"><span class="num">05</span><span class="lbl">Posts</span></a>
     <a class="step-tab" href="#s6"><span class="num">06</span><span class="lbl">Share</span></a>
   </nav>
 
@@ -354,7 +357,7 @@ pre{background:#16161f;color:#c8f7dd;border:none;border-radius:11px;padding:15px
     <div class="card" id="card3">
       <div class="locknote">🔒 Create &amp; unlock your identity first.</div>
       <div class="shead"><span class="snum">3</span>
-        <div><h2>Introduce yourself</h2><p>Your intro is signed locally and posted to the public <b>Technocore lobby</b>. Then export the proof.</p></div>
+        <div><h2>Introduce yourself</h2><p>Your intro is signed locally and posted straight to the public <b>Technocore lobby</b>.</p></div>
       </div>
       <div data-need="unlocked">
         <label>Your introduction</label>
@@ -395,7 +398,7 @@ pre{background:#16161f;color:#c8f7dd;border:none;border-radius:11px;padding:15px
       </div>
       <div data-need="unlocked">
         <label>Title</label>
-        <input type="text" id="workTitle" maxlength="80" placeholder="e.g. Open-source proof verifier for Technocore" oninput="onDraftInput()">
+        <input type="text" id="workTitle" maxlength="80" placeholder="e.g. Lobby connector for Technocore" oninput="onDraftInput()">
         <label>Description</label>
         <textarea id="workBody" maxlength="600" placeholder="What you built, why it matters, link to repo/artifact…" oninput="onDraftInput()"></textarea>
         <div class="count" id="wcount">0 / 600</div>
@@ -403,20 +406,17 @@ pre{background:#16161f;color:#c8f7dd;border:none;border-radius:11px;padding:15px
           <button class="btn primary" id="signWorkBtn" onclick="signEntry('work')">🔏 Sign + Post work</button>
           <button class="btn ghost" onclick="clearWork()">Clear</button>
         </div>
-        <div class="nextrow"><button class="btn primary" onclick="jump('s5')">Next: Review Records →</button></div>
+        <div class="nextrow"><button class="btn primary" onclick="jump('s5')">Next: Your Posts →</button></div>
       </div>
     </div>
   </section>
 
-  <!-- 05 RECORD -->
+  <!-- 05 POSTS -->
   <section class="block" id="s5">
     <div class="card" id="card5">
-      <div class="locknote">🔒 Signed proofs appear here once you complete steps 03–04.</div>
+      <div class="locknote">🔒 Your posts appear here once you complete steps 03–04.</div>
       <div class="shead"><span class="snum">5</span>
-        <div><h2>Signed proof records</h2><p>Every entry is re-verified against its signature each render. Stored on-device only.</p></div>
-      </div>
-      <div class="row" style="margin-bottom:14px">
-        <button class="btn ghost sm" onclick="openVerifier()">🔎 Verify external proof</button>
+        <div><h2>Your lobby posts</h2><p>What you've published to Technocore. Receipts are stored on this device; the posts live in the public lobby.</p></div>
       </div>
       <div id="proofList"></div>
       <div class="nextrow"><button class="btn primary" onclick="jump('s6')">Next: Share Evidence →</button></div>
@@ -426,9 +426,9 @@ pre{background:#16161f;color:#c8f7dd;border:none;border-radius:11px;padding:15px
   <!-- 06 SHARE -->
   <section class="block" id="s6">
     <div class="card" id="card6">
-      <div class="locknote">🔒 Export a proof in step 05 first.</div>
+      <div class="locknote">🔒 Post in steps 03–04 first.</div>
       <div class="shead"><span class="snum">6</span>
-        <div><h2>Share your evidence</h2><p>Pick any proof and generate an X post carrying your DID + proof hash. Personalise before posting.</p></div>
+        <div><h2>Share your evidence</h2><p>Pick any post and generate an X post carrying your DID + live lobby link. Personalise before posting.</p></div>
       </div>
       <div data-need="anyProof"><div id="shareList"></div></div>
     </div>
@@ -454,7 +454,7 @@ pre{background:#16161f;color:#c8f7dd;border:none;border-radius:11px;padding:15px
       <button class="copybtn" id="rLobbyCopy" onclick="copyLobbyRef()" style="visibility:hidden">copy</button>
       <button class="copybtn" id="rLobbyOpen" onclick="openCurrentLobby()" style="visibility:hidden">open</button>
     </div></div>
-    <div class="rsec"><div class="rlab">Contribution</div><div class="rbig dim" id="rProofs">0 proofs signed</div></div>
+    <div class="rsec"><div class="rlab">Contribution</div><div class="rbig dim" id="rProofs">0 posts published</div></div>
     <div class="rsec"><div class="rlab">Status</div><span class="stat-chip" id="rStatus">Inactive</span></div>
     <div class="rsec"><div class="rlab">Recent activity</div>
       <ul class="act-list" id="actList"><li><span class="t">—</span><span>No activity yet.</span></li></ul></div>
@@ -539,7 +539,6 @@ async function signTechnocoreMessage(room,text){
 function b64u(b){return b64(b).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');}
 function ub64u(s){const t=String(s).replace(/-/g,'+').replace(/_/g,'/'),p=t+'='.repeat((4-t.length%4)%4);return ub64(p)}
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const payloadOf=c=>[c.createdAt,c.title||'',c.content].join('\n');
 const shortDid=d=>d.slice(0,17)+'…'+d.slice(-6);
 const hhmm=ts=>new Date(ts).toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
 const fmtDate=ts=>new Date(ts).toLocaleDateString(undefined,{month:'short',day:'numeric'});
@@ -750,7 +749,7 @@ async function resolveLobbySeq(tc){
 }
 async function refreshProofLobbySeq(proofHash){
   const ps=getProofs(),i=ps.findIndex(p=>p.proofHash===proofHash);
-  if(i<0){toast('⚠️ Proof not found');return}
+  if(i<0){toast('⚠️ Post not found');return}
   const p=ps[i];
   toast('🔎 Looking for your Technocore message…');
   const seq=await resolveLobbySeq({room:p.room||'lobby',did:p.did,nonce:String(p.nonce),text:p.technocoreText});
@@ -815,36 +814,23 @@ async function refreshTechnocore(){
 }
 function getProofs(){try{return JSON.parse(store.get(LS_PROOFS)||'[]')}catch{return[]}}
 const findProof=h=>getProofs().find(p=>p.proofHash===h);
-async function verifyProof(p){
-  try{
-    if(p.schema==='technocore.contribution.v2'){
-      const pub=await crypto.subtle.importKey('jwk',p.pub,{name:'Ed25519'},true,['verify']);
-      const okSig=await crypto.subtle.verify('Ed25519',pub,ub64u(p.technocoreSig),enc.encode(tcMessagePayload(p.room,p.nonce,p.technocoreText)));
-      const expect=hex(await sha256(enc.encode(JSON.stringify({schema:p.schema,did:p.did,room:p.room,nonce:p.nonce,text:p.technocoreText,sig:p.technocoreSig}))));
-      return okSig&&expect===p.proofHash;
-    }
-    return false;
-  }catch{return false}
-}
-/* ═══════ proof UI ═══════ */
-function proofCardHTML(p,ok){
+/* ═══════ posts UI ═══════ */
+function proofCardHTML(p){
   return `<h3>${esc((p.kind==='intro'?'👋 ':'🛠 ')+(p.title||(p.kind==='intro'?'Introduction':'Work entry')))}
     <span class="kindtag ${esc(p.kind)}">${esc(p.kind)}</span>
-    <span class="vchip ${ok?'ok':'bad'}">${ok?'✓ valid':'✗ invalid'}</span></h3>
-    <div class="meta">${fmtDate(Date.parse(p.createdAt))} · ${esc(shortDid(p.did))}${p.serverSeq!=null?`<br>Technocore: ${esc(lobbyRef(p.serverSeq))}`:''}<br>${esc(String(p.proofHash).slice(0,26))}…</div>
+    ${p.serverSeq!=null?`<span class="vchip ok">📡 ${esc(lobbyRef(p.serverSeq))}</span>`:'<span class="vchip dim">📡 posted</span>'}</h3>
+    <div class="meta">${fmtDate(Date.parse(p.createdAt))}${p.serverSeq!=null?` · <a href="${esc(lobbyUrl(p.serverSeq))}" target="_blank" rel="noopener noreferrer">view on technocore.chat ↗</a>`:''}</div>
     <div class="actions">
-      <button class="btn ghost sm" onclick="viewJson('${p.proofHash}')">👁 JSON</button>
-      <button class="btn ghost sm" onclick="exportProof('${p.proofHash}')">⬇ Export</button>
       <button class="btn ghost sm" onclick="openTemplate('${p.proofHash}')">📣 X post</button>
+      ${p.serverSeq==null?`<button class="btn ghost sm" onclick="refreshProofLobbySeq('${p.proofHash}')">🔄 Find Lobby ID</button>`:''}
       <button class="btn danger sm" onclick="delProof('${p.proofHash}')">🗑</button>
     </div>`;
 }
 async function renderLists(){
   const ps=getProofs(),box=$('#proofList');
-  box.innerHTML=ps.length?'':'<div class="empty">No proofs yet — sign your intro in step 03 ⬆</div>';
+  box.innerHTML=ps.length?'':'<div class="empty">No posts yet — sign your intro in step 03 ⬆</div>';
   for(const p of ps){
-    const ok=await verifyProof(p);
-    const div=document.createElement('div');div.className='proof';div.innerHTML=proofCardHTML(p,ok);
+    const div=document.createElement('div');div.className='proof';div.innerHTML=proofCardHTML(p);
     box.appendChild(div);
   }
   const sh=$('#shareList');
@@ -852,46 +838,39 @@ async function renderLists(){
   for(const p of ps.slice(0,4)){
     const div=document.createElement('div');div.className='proof';
     div.innerHTML=`<h3>${esc(p.title||(p.kind==='intro'?'Introduction':'Work entry'))}</h3>
-      <div class="meta">${esc(String(p.proofHash).slice(0,26))}…</div>
+      <div class="meta">${p.serverSeq!=null?esc(lobbyRef(p.serverSeq)):'posted'}</div>
       <div class="actions"><button class="btn primary sm" onclick="openTemplate('${p.proofHash}')">📣 Generate X post</button></div>`;
     sh.appendChild(div);
   }
 }
-function viewJson(h){const p=findProof(h);if(p)showModal('Proof JSON',`<pre>${esc(JSON.stringify(p,null,2))}</pre>`)}
-function delProof(h){if(!confirm('Delete this proof locally?'))return;
+function delProof(h){if(!confirm('Delete this local receipt? The post itself stays live in the lobby.'))return;
   store.set(LS_PROOFS,JSON.stringify(getProofs().filter(p=>p.proofHash!==h)));
-  logAct('Proof deleted');refresh()}
-function exportProof(h){const p=findProof(h);if(!p)return;
-  if(dl(`proof-${h.slice(0,8)}.json`,JSON.stringify(p,null,2))){
-    setFlag('export',true);logAct('Proof exported');refresh();toast('⬇ Proof exported');
-  }
-}
+  logAct('Receipt deleted');refresh()}
 function openProofModal(p,fresh){
-  showModal(fresh?'🎉 Signed! Next steps':'Proof detail',
-   `<ol style="padding-left:20px;font-size:13.5px;color:var(--mut);line-height:2;margin-bottom:14px">
-      <li>Signed message submitted to the <b>Technocore lobby</b>.</li>
-      ${p.serverSeq!=null?`<li>Live room reference: <b class="mono">${esc(lobbyRef(p.serverSeq))}</b> — <a href="${esc(lobbyUrl(p.serverSeq))}" target="_blank" rel="noopener noreferrer">open message</a></li>`:'<li>The server sequence is assigned after acceptance and will appear in Your Vault.</li>'}
-      <li>Export / attach this proof where contributions are collected.</li>
-      <li>Share on X with your DID visible.</li>
-    </ol>
-    <pre>${esc(JSON.stringify(p,null,2))}</pre>
-    <div class="row" style="margin-top:16px">
+  showModal(fresh?'🎉 Live on Technocore':'Post detail',
+   `${p.serverSeq!=null
+     ?`<p style="font-size:14.5px;margin-bottom:8px">Your message is published in the public lobby as <b class="mono">${esc(lobbyRef(p.serverSeq))}</b>.</p>
+       <p style="margin:10px 0 16px"><a class="btn primary sm" href="${esc(lobbyUrl(p.serverSeq))}" target="_blank" rel="noopener noreferrer">View it on technocore.chat ↗</a></p>`
+     :`<p style="font-size:14.5px;margin-bottom:14px">Your message was accepted by Technocore. The lobby number is assigned server-side and will appear here and in Your Vault once resolved.</p>`}
+    <blockquote style="border-left:3px solid var(--acc);margin:0 0 16px;padding:10px 14px;background:var(--acc-soft);border-radius:8px;font-size:13.5px;white-space:pre-wrap;word-break:break-word">${esc(p.technocoreText)}</blockquote>
+    <div class="row">
       <button class="btn primary" onclick="closeModal();openTemplate('${p.proofHash}')">📣 Generate X post</button>
-      ${p.serverSeq==null?`<button class="btn ghost" onclick="refreshProofLobbySeq('${p.proofHash}')">🔄 Find Lobby ID</button>`:''}<button class="btn ghost" onclick="exportProof('${p.proofHash}')">⬇ Download</button>
-      <button class="btn ghost" onclick="cp(JSON.stringify(findProof('${p.proofHash}'),null,2))">📋 Copy JSON</button>
+      ${p.serverSeq==null?`<button class="btn ghost" onclick="refreshProofLobbySeq('${p.proofHash}')">🔄 Find Lobby ID</button>`:''}
+      <button class="btn ghost" onclick="closeModal()">Done</button>
     </div>`);
 }
 function openTemplate(h){
   const p=findProof(h);if(!p)return;
   const snip=((p.title?p.title+' — ':'')+p.content);
+  const live=p.serverSeq!=null?lobbyUrl(p.serverSeq):'https://technocore.chat/humans#r/lobby';
   const tpl=
 `${p.kind==='intro'?'Just introduced myself to Technocore':'Shipped something for Technocore'} ✦
 
 💬 "${snip.slice(0,90)}${snip.length>90?'…':''}"
 🪪 ${shortDid(p.did)}
-🔏 proof ${String(p.proofHash).slice(0,16)}…
+📍 live in the lobby: ${live}
 
-Signed locally, keys never left my browser 🔐
+Signed locally — keys never left my browser 🔐
 Tool/repo: <YOUR_LINK_HERE>
 
 @flop_labs #Technocore #FLOP`;
@@ -902,25 +881,6 @@ Tool/repo: <YOUR_LINK_HERE>
 }
 function copyTpl(){cp(document.getElementById('tplTxt').value);setFlag('share',true);logAct('Shared on X');refresh()}
 
-/* ═══════ verifier ═══════ */
-function openVerifier(){
-  showModal('🔎 Verify any proof',
-   `<p class="hint" style="margin-bottom:12px">Paste any proof JSON produced by SIGIL. Signature &amp; hash checked locally.</p>
-    <textarea class="mono" id="verIn" style="min-height:170px" placeholder='{ "schema": "technocore.contribution.v1", … }'></textarea>
-    <div class="row" style="margin-top:14px"><button class="btn primary" onclick="runVerify()">Verify</button></div>
-    <div id="verOut" style="margin-top:14px"></div>`);
-}
-async function runVerify(){
-  const out=$('#verOut');
-  try{
-    const p=JSON.parse($('#verIn').value);
-    const okSig=await verifyProof(p);
-    const expect=hex(await sha256(enc.encode(JSON.stringify({schema:p.schema,did:p.did,payload:payloadOf(p),sig:p.sig}))));
-    const okHash=expect===p.proofHash;
-    out.innerHTML=`<div class="empty" style="border-style:solid;border-color:${okSig&&okHash?'var(--ok)':'var(--err)'};color:${okSig&&okHash?'var(--ok)':'var(--err)'};font-weight:600">
-      ${okSig&&okHash?'✅ VALID — signature & hash verified':'❌ INVALID — '+(okSig?'hash mismatch':'signature invalid')}</div>`;
-  }catch{out.innerHTML='<div class="empty" style="border-style:solid;border-color:var(--err);color:var(--err)">❌ Could not parse proof JSON</div>'}
-}
 function showKeyInfo(){
   const r=state.record;
   showModal('🔑 Vault details',
@@ -939,9 +899,9 @@ function milestones(){
   return [
     {lbl:'Step 01 · Identity created', done:!!state.record},
     {lbl:'Step 02 · Backup downloaded & confirmed', done:!!(f.backup&&f.backupConfirm)},
-    {lbl:'Step 03 · Introduction signed', done:ps.some(p=>p.kind==='intro')},
-    {lbl:'Step 04 · Work entry signed', done:ps.some(p=>p.kind==='work')},
-    {lbl:'Step 05 · Proof exported', done:!!f.export},
+    {lbl:'Step 03 · Introduction posted', done:ps.some(p=>p.kind==='intro')},
+    {lbl:'Step 04 · Work entry posted', done:ps.some(p=>p.kind==='work')},
+    {lbl:'Step 05 · Post published with Lobby ID', done:ps.some(p=>p.serverSeq!=null)},
     {lbl:'Step 06 · Evidence shared', done:!!f.share},
   ];
 }
@@ -979,7 +939,7 @@ function refresh(){
   $('#rLobby').className='rbig mono'+(r?'':' dim');
   $('#rLobbyCopy').style.visibility=r?'visible':'hidden';
   $('#rLobbyOpen').style.visibility=r?'visible':'hidden';
-  $('#rProofs').textContent=ps.length+(ps.length===1?' proof signed':' proofs signed');
+  $('#rProofs').textContent=ps.length+(ps.length===1?' post published':' posts published');
   $('#rProofs').className='rbig'+(ps.length?'':' dim');
   const st=$('#rStatus');st.textContent=u?'Active':'Inactive';st.className='stat-chip'+(u?' on':'');
   $('#vaultIco').textContent=u?'🔓':'🔒';
